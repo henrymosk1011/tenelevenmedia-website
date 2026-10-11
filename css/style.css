@@ -17,7 +17,7 @@
   --nav-h: 76px;
   --section-y: clamp(6rem, 13vw, 13rem);
 
-  --f-display: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-display: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-serif: "Instrument Serif", Georgia, "Times New Roman", serif;
   --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
@@ -33,7 +33,6 @@
 *::after { box-sizing: border-box; }
 
 html { -webkit-text-size-adjust: 100%; }
-html.lenis, html.lenis body { height: auto; }
 
 body {
   margin: 0;
@@ -167,101 +166,47 @@ em {
 }
 
 /* ==========================================================================
-   Preloader
+   Intro: the hero waits (hidden) until its entrance animation starts.
+   The fallback animation reveals it after 3s if scripts never run.
    ========================================================================== */
-.loader {
-  position: fixed;
-  inset: 0;
-  z-index: 950;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
+.intro .hero__inner,
+.intro .nav {
+  opacity: 0;
+  animation: intro-fallback 0s linear 3s forwards;
 }
-.no-js .loader { display: none; }
-.loader__cols {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-}
-.loader__cols i {
-  display: block;
-  background: var(--ink-2);
-  margin-right: -1px;
-}
-.loader__inner {
-  position: relative;
-  display: grid;
-  justify-items: center;
-  gap: 1rem;
-}
-.loader__time {
-  font-size: clamp(5rem, 20vw, 18rem);
-  font-weight: 800;
-  letter-spacing: -0.06em;
-  line-height: 0.85;
-  font-variant-numeric: tabular-nums;
-}
-.loader__label { color: var(--bone-dim); }
+@keyframes intro-fallback { to { opacity: 1; } }
 
 /* ==========================================================================
-   Cursor
+   Cursor label: the normal system cursor is always used (no lag); this
+   bubble only appears beside it over project links.
    ========================================================================== */
 .cursor { display: none; }
 .has-cursor .cursor { display: block; }
-.has-cursor body,
-.has-cursor a,
-.has-cursor button { cursor: none; }
-.cursor__dot,
 .cursor__ring {
   position: fixed;
   top: 0; left: 0;
   z-index: 980;
   pointer-events: none;
+  width: 96px; height: 96px;
+  margin: -48px 0 0 -48px;
   border-radius: 50%;
-}
-.cursor__dot {
-  width: 6px; height: 6px;
-  margin: -3px 0 0 -3px;
-  background: var(--bone);
-  mix-blend-mode: difference;
-}
-.cursor__ring {
-  width: 40px; height: 40px;
-  margin: -20px 0 0 -20px;
-  border: 1px solid rgba(241, 237, 230, 0.45);
+  background: var(--accent);
   display: grid;
   place-items: center;
-  transition: width 0.45s var(--ease-out), height 0.45s var(--ease-out), margin 0.45s var(--ease-out),
-    background-color 0.35s, border-color 0.35s;
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 0.25s, transform 0.4s var(--ease-out);
 }
+.cursor__ring { translate: -200px -200px; } /* moved to the pointer by JS */
 .cursor__label {
   font-family: var(--f-mono);
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink);
-  opacity: 0;
-  transform: scale(0.6);
-  transition: opacity 0.3s, transform 0.45s var(--ease-out);
   white-space: nowrap;
 }
-.cursor.is-link .cursor__ring {
-  width: 64px; height: 64px;
-  margin: -32px 0 0 -32px;
-  background: rgba(241, 237, 230, 0.1);
-  border-color: transparent;
-}
-.cursor.is-label .cursor__ring {
-  width: 104px; height: 104px;
-  margin: -52px 0 0 -52px;
-  background: var(--accent);
-  border-color: transparent;
-}
-.cursor.is-label .cursor__label { opacity: 1; transform: none; }
-.cursor.is-label .cursor__dot { opacity: 0; }
-.cursor.is-hidden .cursor__ring,
-.cursor.is-hidden .cursor__dot { opacity: 0; }
+.cursor.is-label .cursor__ring { opacity: 1; transform: none; }
 
 /* ==========================================================================
    Nav
@@ -284,14 +229,10 @@ em {
 
 .nav__logo {
   justify-self: start;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.15em;
   font-weight: 800;
   font-size: 1.15rem;
   letter-spacing: -0.04em;
 }
-.nav__logo em { font-size: 1.15em; letter-spacing: 0; }
 
 .nav__status {
   display: inline-flex;
@@ -479,17 +420,23 @@ em {
   width: 100%;
   height: 100%;
   fill: var(--bone);
-  font-family: var(--f-mono);
-  font-size: 13.4px;
-  letter-spacing: 0.18em;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 14px;
   animation: spin 22s linear infinite;
 }
-.badge__time {
-  font-weight: 800;
+.badge__icon {
+  display: grid;
+  place-items: center;
+  width: 38%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--ink);
   font-size: clamp(1.1rem, 1.6vw, 1.6rem);
-  letter-spacing: -0.04em;
-  color: var(--accent);
+  transition: transform 0.5s var(--ease-out);
 }
+.badge:hover .badge__icon { transform: scale(1.12); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .hero__brand { min-width: 0; }
@@ -977,7 +924,7 @@ em {
 .bigtype__row--outline em { color: var(--accent); -webkit-text-stroke: 0; }
 
 /* ==========================================================================
-   Process — pinned clock
+   Process: pinned dial
    ========================================================================== */
 .process {
   position: relative;
@@ -997,16 +944,17 @@ em {
 .process__head { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: end; gap: 2rem; flex-wrap: wrap; }
 .process__head .section-title { max-width: none; font-size: clamp(2.4rem, 5.4vw, 6rem); }
 
-.process__clock {
+.process__dial {
   position: relative;
   align-self: center;
   justify-self: center;
   width: min(100%, 58vh, 560px);
   aspect-ratio: 1;
+  container-type: inline-size;
 }
-.process__clock svg { width: 100%; height: 100%; overflow: visible; }
-.clock__face { fill: var(--ink-2); stroke: var(--line); stroke-width: 1; }
-.clock__progress {
+.process__dial svg { width: 100%; height: 100%; overflow: visible; }
+.dial__face { fill: var(--ink-2); stroke: var(--line); stroke-width: 1; }
+.dial__progress {
   fill: none;
   stroke: var(--accent);
   stroke-width: 3;
@@ -1015,24 +963,52 @@ em {
   transform: rotate(-90deg);
   transform-origin: 200px 200px;
 }
-.clock__ticks line { stroke: rgba(241, 237, 230, 0.3); stroke-width: 1.5; }
-.clock__ticks line.is-hour { stroke: var(--bone); stroke-width: 3; }
-.clock__hour { stroke: var(--bone); stroke-width: 10; stroke-linecap: round; }
-.clock__minute { stroke: var(--accent); stroke-width: 5; stroke-linecap: round; }
-.clock__pin { fill: var(--bone); }
-.clock__digital {
+.dial__text {
+  fill: var(--bone-dim);
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 15px;
+}
+.dial__inner {
+  fill: none;
+  stroke: rgba(241, 237, 230, 0.3);
+  stroke-width: 1.5;
+  stroke-dasharray: 2 9;
+}
+.dial__nodes circle {
+  fill: var(--ink-2);
+  stroke: rgba(241, 237, 230, 0.35);
+  stroke-width: 1.5;
+  transition: fill 0.4s, stroke 0.4s;
+}
+.dial__nodes circle.is-on { fill: var(--accent); stroke: var(--accent); }
+.dial__center {
   position: absolute;
-  left: 50%;
-  bottom: 22%;
-  transform: translateX(-50%);
-  font-size: clamp(14px, 1.4vw, 18px);
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 3cqw;
+  pointer-events: none;
+}
+.dial__count {
+  height: 1em;
+  overflow: hidden;
+  font-size: 24cqw;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+.dial__count-track span { display: block; height: 1em; }
+.dial__status {
+  font-size: clamp(12px, 1.2vw, 15px);
   padding: 0.35em 0.9em;
   border-radius: 99px;
   border: 1px solid var(--line);
   background: var(--ink);
   font-variant-numeric: tabular-nums;
 }
-.clock__digital.is-live { background: var(--accent); color: var(--ink); border-color: var(--accent); }
+.dial__status.is-live { background: var(--accent); color: var(--ink); border-color: var(--accent); }
 
 .process__steps {
   position: relative;
@@ -1245,7 +1221,6 @@ em {
 .footer__meta > div { display: grid; gap: 0.6rem; align-content: start; }
 .footer__meta a,
 .footer__meta [data-clock] { font-size: clamp(1rem, 1.3vw, 1.2rem); font-weight: 500; }
-.footer__meta [data-clock].is-1011 { color: var(--accent); }
 .footer__socials { display: grid; gap: 0.2rem; }
 
 .footer__bottom {
@@ -1315,7 +1290,7 @@ em {
   .stack__title { font-size: clamp(3rem, 15vw, 8rem); white-space: normal; }
 
   .process__pin { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; }
-  .process__clock { width: min(78vw, 38svh); }
+  .process__dial { width: min(78vw, 38svh); }
   .process.is-pinned .process__steps { min-height: 16rem; }
   .process.is-pinned .step { align-content: start; }
 
@@ -1342,8 +1317,8 @@ em {
   .grain { display: none; }
 }
 
-/* without scroll animation the clock simply sticks beside the steps */
-.process:not(.is-pinned) .process__clock {
+/* without scroll animation the dial simply sticks beside the steps */
+.process:not(.is-pinned) .process__dial {
   position: sticky;
   top: calc(var(--nav-h) + 4vh);
   align-self: start;

@@ -1,25 +1,26 @@
 /* ==========================================================================
-   TENELEVENMEDIA — site content
+   TENELEVENMEDIA: site content
    --------------------------------------------------------------------------
    This is the only file you need to edit to update the portfolio.
 
    Each project:
-     title    – project / client name
-     url      – live website (shown as "Visit site")
-     category – short label, e.g. "E-commerce", "Musician", "Restaurant"
-     year     – year launched
-     image    – (optional) path to a screenshot, e.g. "assets/work/acme.jpg"
+     title    : project / client name
+     url      : live website (shown as "Visit site")
+     category : short label, e.g. "Ecommerce", "Musician", "Restaurant"
+                (avoid dashes; the site is written without them)
+     year     : year launched
+     image    : (optional) path to a screenshot, e.g. "assets/work/acme.jpg"
                 Run `node scripts/screenshot.mjs` to generate these
                 automatically from each project's url. Tall, full-page
                 screenshots scroll inside the browser frame on hover.
-     accent   – (optional) colour used for the generated cover when there is
+     accent   : (optional) colour used for the generated cover when there is
                 no screenshot yet, and for hover glows.
    ========================================================================== */
 
 window.SITE = {
   email: "hello@tenelevenmedia.com",
-  location: "United States",
-  timezone: "America/New_York",
+  // Pacific time; shows PDT in summer and PST in winter automatically
+  timezone: "America/Los_Angeles",
   socials: [
     { label: "Instagram", url: "https://instagram.com/" },
     { label: "LinkedIn", url: "https://linkedin.com/" },
@@ -40,7 +41,7 @@ window.PROJECTS = [
   {
     title: "Project Two",
     url: "https://example.com",
-    category: "E-commerce",
+    category: "Ecommerce",
     year: "2026",
     image: "",
     accent: "#6b5bff",

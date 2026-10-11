@@ -99,7 +99,7 @@
               <span class="card__num mono">${pad(i + 1)}</span>
               <h3 class="card__title">${esc(p.title)}</h3>
               <span class="card__visit mono">Visit site <b>↗</b></span>
-              <span class="card__cat mono">${esc(p.category || "")} — ${esc(p.year || "")}</span>
+              <span class="card__cat mono">${esc(p.category || "")} · ${esc(p.year || "")}</span>
             </div>
           </a>
         </article>`;
@@ -216,7 +216,7 @@
   startClock();
 
   if (!hasGsap) {
-    $(".loader")?.remove();
+    root.classList.remove("intro");
     fitText();
     window.addEventListener("resize", fitText);
     heroFluid?.start();
@@ -227,15 +227,11 @@
   const { gsap, ScrollTrigger } = window;
   gsap.registerPlugin(ScrollTrigger);
 
-  /* Smooth scrolling */
-  let lenis = null;
-  if (motion && window.Lenis) {
-    lenis = new window.Lenis({ lerp: 0.085, smoothWheel: true, wheelMultiplier: 1 });
-    lenis.on("scroll", ScrollTrigger.update);
-    gsap.ticker.add((t) => lenis.raf(t * 1000));
-    gsap.ticker.lagSmoothing(0);
-    lenis.stop();
-  }
+  // Native scrolling (no smooth-scroll library) so the page responds instantly.
+  const scrollToTarget = (target) => {
+    const top = target === 0 ? 0 : target.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({ top, behavior: reduceMotion ? "auto" : "smooth" });
+  };
 
   // anchor links
   $$('a[href^="#"]').forEach((a) => {
@@ -246,9 +242,7 @@
       if (target === null) return;
       e.preventDefault();
       closeMenu();
-      if (lenis) lenis.scrollTo(target, { duration: 1.6, easing: (t) => 1 - Math.pow(1 - t, 4) });
-      else if (target === 0) window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
-      else target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
+      scrollToTarget(target);
     });
   });
 
@@ -266,7 +260,11 @@
   /* ------------------------------------------------------------------ *
    * Fonts → fit → animations
    * ------------------------------------------------------------------ */
-  const fontsReady = document.fonts ? document.fonts.ready : Promise.resolve();
+  // wait for webfonts (so text measures correctly), but never longer than 2.5s
+  const fontsReady = Promise.race([
+    document.fonts ? document.fonts.ready : Promise.resolve(),
+    new Promise((r) => setTimeout(r, 2500)),
+  ]);
   fontsReady.then(() => {
     fitText();
     window.addEventListener("resize", () => {
@@ -276,10 +274,8 @@
   });
 
   function init() {
-    buildClock();
     if (!motion) {
-      staticClock();
-      $(".loader")?.remove();
+      staticDial();
       heroFluid?.start();
       footFluid?.start();
       setupCursor();
@@ -287,7 +283,8 @@
       return;
     }
 
-    preloader().then(() => lenis?.start());
+    heroFluid?.start();
+    heroIntro();
 
     heroScroll();
     reveals();
@@ -296,7 +293,7 @@
     horizontalWork();
     stackCards();
     bigType();
-    processClock();
+    processDial();
     indexPreview();
     footer();
     setupCursor();
@@ -308,48 +305,10 @@
   }
 
   /* ------------------------------------------------------------------ *
-   * Preloader — counts the clock up to 10:11, then the curtain lifts
+   * Hero entrance
    * ------------------------------------------------------------------ */
-  function preloader() {
-    return new Promise((resolve) => {
-      const loader = $(".loader");
-      const timeEl = $(".loader__time");
-      if (!loader) {
-        heroIntro();
-        resolve();
-        return;
-      }
-      heroFluid?.start();
-      const counter = { m: 0 };
-      const tl = gsap.timeline({
-        onComplete: () => {
-          loader.remove();
-          resolve();
-        },
-      });
-      tl.from(".loader__inner > *", { yPercent: 100, opacity: 0, duration: 0.8, stagger: 0.08, ease: "power3.out" })
-        .to(
-          counter,
-          {
-            m: 611, // 10 hours 11 minutes
-            duration: 1.8,
-            ease: "power2.inOut",
-            onUpdate: () => {
-              const m = Math.round(counter.m);
-              timeEl.textContent = `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
-            },
-          },
-          0.1
-        )
-        .to(timeEl, { color: "#ff4d1f", duration: 0.25 })
-        .to(".loader__inner", { yPercent: -30, opacity: 0, duration: 0.6, ease: "power3.in" }, "+=0.15")
-        .to(".loader__cols i", { yPercent: -100, duration: 1, ease: "expo.inOut", stagger: 0.07 }, "-=0.2")
-        .add(heroIntro(), "-=0.75");
-    });
-  }
-
   function heroIntro() {
-    const tl = gsap.timeline();
+    const tl = gsap.timeline({ delay: 0.1 });
     tl.from(wordmarkChars, {
       yPercent: 110,
       rotate: 8,
@@ -363,6 +322,8 @@
       .to(".hero [data-reveal]", { opacity: 1, duration: 1, stagger: 0.08 }, 0.5)
       .from(".badge", { scale: 0, rotate: -180, duration: 1.4, ease: "expo.out" }, 0.4)
       .from(".nav > *", { y: -30, opacity: 0, duration: 1, ease: "expo.out", stagger: 0.08 }, 0.3);
+    // everything now starts from its hidden state, so the page can be shown
+    root.classList.remove("intro");
     return tl;
   }
 
@@ -437,7 +398,7 @@
     if (!el) return;
     gsap.set(scrubWords, { opacity: 0.14 });
     const tl = gsap.timeline({
-      scrollTrigger: { trigger: el, start: "top 80%", end: "bottom 45%", scrub: 0.6 },
+      scrollTrigger: { trigger: el, start: "top 80%", end: "bottom 45%", scrub: true },
     });
     tl.to(scrubWords, { opacity: 1, ease: "none", stagger: 0.1, duration: 0.6 }, 0);
     $$(".pill", el).forEach((pill) => {
@@ -445,7 +406,7 @@
         scaleX: 0,
         transformOrigin: "left center",
         ease: "none",
-        scrollTrigger: { trigger: pill, start: "top 85%", end: "top 55%", scrub: 0.6 },
+        scrollTrigger: { trigger: pill, start: "top 85%", end: "top 55%", scrub: true },
       });
     });
   }
@@ -454,6 +415,18 @@
    * Marquee — infinite loop that speeds up & reverses with scroll
    * ------------------------------------------------------------------ */
   function marquees() {
+    // page scroll speed (px per frame) and direction, decaying to 0 when scrolling stops
+    let scrollV = 0;
+    let lastScroll = 0;
+    ScrollTrigger.create({
+      start: 0,
+      end: "max",
+      onUpdate: (self) => {
+        scrollV = self.getVelocity() / 60;
+        lastScroll = performance.now();
+      },
+    });
+
     $$("[data-marquee]").forEach((m) => {
       const base = parseFloat(m.dataset.marquee) || 1;
       const inner = $(".marquee__inner", m);
@@ -474,7 +447,7 @@
 
       gsap.ticker.add((time, delta) => {
         if (!visible) return;
-        const v = lenis ? lenis.velocity : 0;
+        const v = performance.now() - lastScroll < 120 ? scrollV : 0;
         if (v > 0.1) dir = 1;
         else if (v < -0.1) dir = -1;
         boost += (Math.min(Math.abs(v), 60) * 0.35 - boost) * 0.1;
@@ -507,7 +480,7 @@
         start: "top top",
         end: () => `+=${distance()}`,
         pin: ".work__pin",
-        scrub: 1,
+        scrub: true,
         invalidateOnRefresh: true,
         anticipatePin: 1,
         onUpdate: (self) => {
@@ -658,7 +631,7 @@
         {
           x: () => (dir < 0 ? -amount() : 0),
           ease: "none",
-          scrollTrigger: { trigger: ".bigtype", start: "top bottom", end: "bottom top", scrub: 0.5, invalidateOnRefresh: true },
+          scrollTrigger: { trigger: ".bigtype", start: "top bottom", end: "bottom top", scrub: true, invalidateOnRefresh: true },
         }
       );
     });
@@ -667,47 +640,32 @@
   /* ------------------------------------------------------------------ *
    * Process — the clock winds to 10:11 as you scroll the steps
    * ------------------------------------------------------------------ */
-  function buildClock() {
-    const ticks = $(".clock__ticks");
-    if (!ticks) return;
-    const NS = "http://www.w3.org/2000/svg";
-    for (let i = 0; i < 60; i++) {
-      const l = document.createElementNS(NS, "line");
-      const hour = i % 5 === 0;
-      l.setAttribute("x1", 200);
-      l.setAttribute("x2", 200);
-      l.setAttribute("y1", 22);
-      l.setAttribute("y2", hour ? 44 : 32);
-      l.setAttribute("transform", `rotate(${i * 6} 200 200)`);
-      if (hour) l.classList.add("is-hour");
-      ticks.appendChild(l);
+  // Static dial (no scroll animation): show it complete
+  function staticDial() {
+    $(".dial__progress")?.style.setProperty("stroke-dashoffset", "0");
+    $$(".dial__nodes circle").forEach((n) => n.classList.add("is-on"));
+    const track = $(".dial__count-track");
+    if (track) track.style.transform = "translateY(-75%)";
+    const status = $(".dial__status");
+    if (status) {
+      status.textContent = "Live";
+      status.classList.add("is-live");
     }
   }
 
-  // Static clock (no scroll animation): show 10:11
-  function staticClock() {
-    $(".clock__minute")?.setAttribute("transform", "rotate(66 200 200)");
-    $(".clock__hour")?.setAttribute("transform", "rotate(305.5 200 200)");
-    const d = $(".clock__digital");
-    if (d) {
-      d.textContent = "10:11";
-      d.classList.add("is-live");
-    }
-    $(".clock__progress")?.style.setProperty("stroke-dashoffset", "0");
-  }
-
-  function processClock() {
+  function processDial() {
     const section = $(".process");
     if (!section) return;
     const steps = $$(".step", section);
-    const digital = $(".clock__digital", section);
+    const nodes = $$(".dial__nodes circle", section);
+    const track = $(".dial__count-track", section);
+    const status = $(".dial__status", section);
 
     section.classList.add("is-pinned");
     gsap.set(steps, { opacity: 0, y: 60 });
     gsap.set(steps[0], { opacity: 1, y: 0 });
 
-    const total = 611; // minutes from 00:00 to 10:11
-    const state = { m: 0 };
+    const state = { p: 0 };
     const tl = gsap.timeline({
       defaults: { ease: "none" },
       scrollTrigger: {
@@ -715,27 +673,31 @@
         start: "top top",
         end: () => `+=${window.innerHeight * 3}`,
         pin: ".process__pin",
-        scrub: 1,
+        scrub: true,
         invalidateOnRefresh: true,
       },
     });
 
     const dur = steps.length; // one unit per step
     tl.to(state, {
-      m: total,
+      p: 1,
       duration: dur,
       onUpdate: () => {
-        const m = Math.round(state.m);
-        gsap.set(".clock__minute", { rotation: m * 6, svgOrigin: "200 200" });
-        gsap.set(".clock__hour", { rotation: m * 0.5, svgOrigin: "200 200" });
-        digital.textContent = `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
-        digital.classList.toggle("is-live", m >= total);
+        const pct = Math.round(state.p * 100);
+        status.textContent = pct >= 100 ? "Live" : `${pct}%`;
+        status.classList.toggle("is-live", pct >= 100);
+        nodes.forEach((n, i) => n.classList.toggle("is-on", state.p >= i / nodes.length));
       },
     }, 0);
-    tl.to(".clock__progress", { strokeDashoffset: 0, duration: dur }, 0);
+    tl.to(".dial__progress", { strokeDashoffset: 0, duration: dur }, 0);
+    tl.to(".dial__text", { rotation: -270, svgOrigin: "200 200", duration: dur }, 0);
+    tl.to(".dial__inner", { rotation: 180, svgOrigin: "200 200", duration: dur }, 0);
 
     steps.forEach((step, i) => {
-      if (i > 0) tl.to(step, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, i - 0.1);
+      if (i > 0) {
+        tl.to(step, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, i - 0.1);
+        tl.to(track, { yPercent: (-100 * i) / steps.length, duration: 0.35, ease: "power3.inOut" }, i - 0.15);
+      }
       if (i < steps.length - 1) tl.to(step, { opacity: 0, y: -60, duration: 0.35, ease: "power2.in" }, i + 0.6);
     });
   }
@@ -749,9 +711,9 @@
     const list = $("[data-index]");
     if (!box || !track || !list || !finePointer) return;
 
-    const xTo = gsap.quickTo(box, "x", { duration: 0.6, ease: "power3.out" });
-    const yTo = gsap.quickTo(box, "y", { duration: 0.6, ease: "power3.out" });
-    const rTo = gsap.quickTo(box, "rotation", { duration: 0.8, ease: "power3.out" });
+    const xTo = gsap.quickTo(box, "x", { duration: 0.12, ease: "power2.out" });
+    const yTo = gsap.quickTo(box, "y", { duration: 0.12, ease: "power2.out" });
+    const rTo = gsap.quickTo(box, "rotation", { duration: 0.5, ease: "power3.out" });
     let lastX = 0;
 
     window.addEventListener("pointermove", (e) => {
@@ -802,16 +764,14 @@
     if (!el) return;
     let fmt;
     try {
-      fmt = new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: SITE.timezone, timeZoneName: "short" });
+      fmt = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: SITE.timezone, timeZoneName: "short" });
     } catch {
-      fmt = new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", hour12: true, timeZoneName: "short" });
+      fmt = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZoneName: "short" });
     }
     const tick = () => {
       const parts = fmt.formatToParts(new Date());
       const get = (t) => parts.find((p) => p.type === t)?.value || "";
-      const is1011 = get("hour") === "10" && get("minute") === "11";
-      el.textContent = `${get("hour")}:${get("minute")} ${get("dayPeriod")} ${get("timeZoneName")}${is1011 ? " ✺ it's ten eleven" : ""}`;
-      el.classList.toggle("is-1011", is1011);
+      el.textContent = `${get("hour")}:${get("minute")} ${get("dayPeriod")} ${get("timeZoneName")}`;
     };
     tick();
     setInterval(tick, 10000);
@@ -824,34 +784,20 @@
     const cursor = $(".cursor");
     if (!cursor || !finePointer) return;
     root.classList.add("has-cursor");
-    const dot = $(".cursor__dot", cursor);
     const ring = $(".cursor__ring", cursor);
     const label = $(".cursor__label", cursor);
 
-    const dx = gsap.quickTo(dot, "x", { duration: 0.08 });
-    const dy = gsap.quickTo(dot, "y", { duration: 0.08 });
-    const rx = gsap.quickTo(ring, "x", { duration: 0.45, ease: "power3.out" });
-    const ry = gsap.quickTo(ring, "y", { duration: 0.45, ease: "power3.out" });
-
-    gsap.set([dot, ring], { x: window.innerWidth / 2, y: window.innerHeight / 2 });
-
+    // positioned directly on every pointer event: no easing, no trailing
     window.addEventListener("pointermove", (e) => {
-      cursor.classList.remove("is-hidden");
-      dx(e.clientX);
-      dy(e.clientY);
-      rx(e.clientX);
-      ry(e.clientY);
-    });
-    document.addEventListener("pointerleave", () => cursor.classList.add("is-hidden"));
-    document.addEventListener("pointerenter", () => cursor.classList.remove("is-hidden"));
+      ring.style.translate = `${e.clientX}px ${e.clientY}px`;
+    }, { passive: true });
 
     document.addEventListener("pointerover", (e) => {
       const labelled = e.target.closest("[data-cursor]");
-      const link = e.target.closest("a, button");
       cursor.classList.toggle("is-label", !!labelled);
-      cursor.classList.toggle("is-link", !labelled && !!link);
       if (labelled) label.textContent = labelled.dataset.cursor;
     });
+    document.addEventListener("pointerleave", () => cursor.classList.remove("is-label"));
   }
 
   /* ------------------------------------------------------------------ *
@@ -906,7 +852,7 @@
       document.body.classList.add("menu-open");
       btn.setAttribute("aria-expanded", "true");
       menu.setAttribute("aria-hidden", "false");
-      lenis?.stop();
+      root.style.overflow = "hidden";
       gsap.set(menu, { visibility: "visible" });
       gsap.fromTo(
         menu,
@@ -924,7 +870,7 @@
     document.body.classList.remove("menu-open");
     $(".nav__menu").setAttribute("aria-expanded", "false");
     menu.setAttribute("aria-hidden", "true");
-    lenis?.start();
+    root.style.overflow = "";
     menuTl.pause();
     gsap.to(menu, {
       clipPath: menuCircle(0),

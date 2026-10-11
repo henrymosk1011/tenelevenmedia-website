@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TENELEVENMEDIA — Web Design Studio</title>
+  <title>TENELEVENMEDIA | Web Design Studio</title>
   <meta name="description" content="TENELEVENMEDIA is an independent web design studio crafting bold, fluid, unforgettable websites for brands, artists and businesses that refuse to blend in." />
   <meta name="theme-color" content="#0c0c0d" />
 
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="TENELEVENMEDIA — Web Design Studio" />
+  <meta property="og:title" content="TENELEVENMEDIA | Web Design Studio" />
   <meta property="og:description" content="Bold, fluid, unforgettable websites for brands that refuse to blend in." />
   <meta name="twitter:card" content="summary_large_image" />
 
@@ -16,37 +16,29 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" />
 
-  <link rel="stylesheet" href="vendor/lenis.css" />
   <link rel="stylesheet" href="css/style.css" />
 
-  <script>document.documentElement.classList.replace("no-js", "js");</script>
+  <script>
+    (function (c) {
+      c.replace("no-js", "js");
+      // hide the hero until its entrance animation starts (CSS shows it anyway after 3s)
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) c.add("intro");
+    })(document.documentElement.classList);
+  </script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
 
-  <!-- ============ PRELOADER ============ -->
-  <div class="loader" aria-hidden="true">
-    <div class="loader__cols"><i></i><i></i><i></i><i></i><i></i></div>
-    <div class="loader__inner">
-      <span class="loader__label mono">TENELEVENMEDIA</span>
-      <span class="loader__time">00:00</span>
-      <span class="loader__label mono">Setting the clock</span>
-    </div>
-  </div>
-
-  <!-- ============ CURSOR ============ -->
-  <div class="cursor is-hidden" aria-hidden="true">
-    <div class="cursor__dot"></div>
+  <!-- ============ CURSOR LABEL (shown over project links) ============ -->
+  <div class="cursor" aria-hidden="true">
     <div class="cursor__ring"><span class="cursor__label">View</span></div>
   </div>
 
   <!-- ============ NAV ============ -->
   <header class="nav">
-    <a href="#top" class="nav__logo" aria-label="TENELEVENMEDIA — back to top">
-      <span class="nav__logo-mark">TENELEVEN</span><em>media</em>
-    </a>
+    <a href="#top" class="nav__logo" aria-label="TENELEVENMEDIA, back to top">TENELEVENMEDIA</a>
     <p class="nav__status mono"><span class="pulse"></span>Booking new projects</p>
     <button class="nav__menu" type="button" aria-expanded="false" aria-controls="menu" data-magnetic>
       <span class="nav__menu-text"><span>Menu</span><span>Close</span></span>
@@ -83,17 +75,17 @@
 
         <div class="hero__mid">
           <h1 class="hero__title">
-            <span class="sr-only">TENELEVENMEDIA — </span>
+            <span class="sr-only">TENELEVENMEDIA. </span>
             <span class="line"><span>Design</span></span>
             <span class="line"><span>that <em>moves.</em></span></span>
           </h1>
-          <div class="badge" aria-hidden="true">
-            <svg viewBox="0 0 200 200" class="badge__ring">
+          <a href="#about" class="badge" aria-label="Scroll down">
+            <svg viewBox="0 0 200 200" class="badge__ring" aria-hidden="true">
               <defs><path id="circlePath" d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0" /></defs>
               <text><textPath href="#circlePath" textLength="488" lengthAdjust="spacing">TENELEVENMEDIA ✺ WEB DESIGN STUDIO ✺ </textPath></text>
             </svg>
-            <span class="badge__time">10:11</span>
-          </div>
+            <span class="badge__icon" aria-hidden="true"><i class="arrow-down"></i></span>
+          </a>
         </div>
 
         <div class="hero__brand" aria-hidden="true">
@@ -101,7 +93,7 @@
         </div>
 
         <div class="hero__bottom mono">
-          <span data-reveal>Web design — Development — Branding</span>
+          <span data-reveal>Web design · Development · Branding</span>
           <span class="hero__scroll" data-reveal>Scroll to explore <i class="arrow-down"></i></span>
           <span data-reveal>&copy; <span data-year></span></span>
         </div>
@@ -118,20 +110,20 @@
           designer's eye, an engineer's precision and a musician's sense of
           <em>rhythm</em>
           <span class="pill pill--b" aria-hidden="true"></span>
-          — crafting websites that look stunning, move beautifully, load fast and stay secure.
+          to craft websites that look stunning, move beautifully, load fast and stay secure.
         </p>
         <div class="manifesto__cols">
           <div class="manifesto__col" data-fade>
             <span class="mono">Design</span>
-            <p>No templates. Every page is art-directed from a blank canvas around your brand, your audience and your goals.</p>
+            <p>No templates. Every page is art directed from a blank canvas around your brand, your audience and your goals.</p>
           </div>
           <div class="manifesto__col" data-fade>
             <span class="mono">Engineering</span>
-            <p>Hand-built, responsive and performance-obsessed — with an IT &amp; cybersecurity background baked into every launch.</p>
+            <p>Built by hand, responsive and obsessed with performance, with an IT &amp; cybersecurity background baked into every launch.</p>
           </div>
           <div class="manifesto__col" data-fade>
             <span class="mono">Motion</span>
-            <p>Scroll-driven storytelling and fluid micro-interactions that make people stop, explore and remember you.</p>
+            <p>Storytelling that unfolds as you scroll, plus fluid microinteractions that make people stop, explore and remember you.</p>
           </div>
         </div>
       </div>
@@ -141,7 +133,7 @@
     <section class="marquee-band" aria-label="Capabilities">
       <div class="marquee" data-marquee="1">
         <div class="marquee__inner">
-          <span>Web Design</span><b>✺</b><span>Development</span><b>✺</b><span>Branding</span><b>✺</b><span>Motion</span><b>✺</b><span>E-commerce</span><b>✺</b><span>SEO</span><b>✺</b>
+          <span>Web Design</span><b>✺</b><span>Development</span><b>✺</b><span>Branding</span><b>✺</b><span>Motion</span><b>✺</b><span>Ecommerce</span><b>✺</b><span>SEO</span><b>✺</b>
         </div>
       </div>
       <div class="marquee marquee--alt" data-marquee="-1" aria-hidden="true">
@@ -197,7 +189,7 @@
           <div class="stack__top mono"><span>01</span><span>Web Design</span></div>
           <h3 class="stack__title">Web <em>design</em></h3>
           <div class="stack__body">
-            <p>Bespoke, conversion-focused design crafted from a blank canvas — never a template. Every layout, interaction and detail is made for your brand.</p>
+            <p>Bespoke design built to convert, crafted from a blank canvas and never from a template. Every layout, interaction and detail is made for your brand.</p>
             <ul class="tags"><li>UI / UX</li><li>Wireframes</li><li>Prototyping</li><li>Art direction</li><li>Responsive</li></ul>
           </div>
         </article>
@@ -205,15 +197,15 @@
           <div class="stack__top mono"><span>02</span><span>Development</span></div>
           <h3 class="stack__title">Develop<em>ment</em></h3>
           <div class="stack__body">
-            <p>Hand-built, lightning-fast sites with smooth motion and clean, accessible code. Built to rank, built to scale, built to last.</p>
-            <ul class="tags"><li>Front-end</li><li>CMS</li><li>E-commerce</li><li>Animation</li><li>Performance</li></ul>
+            <p>Lightning fast sites built by hand, with smooth motion and clean, accessible code. Built to rank, built to scale, built to last.</p>
+            <ul class="tags"><li>Frontend</li><li>CMS</li><li>Ecommerce</li><li>Animation</li><li>Performance</li></ul>
           </div>
         </article>
         <article class="stack__card" style="--card-bg: var(--violet); --card-fg: var(--bone);">
           <div class="stack__top mono"><span>03</span><span>Branding</span></div>
           <h3 class="stack__title">Brand<em>ing</em></h3>
           <div class="stack__body">
-            <p>Logos, type, colour and graphic systems that give your business a visual voice people recognise instantly — online and off.</p>
+            <p>Logos, type, colour and graphic systems that give your business a visual voice people recognise instantly, online and off.</p>
             <ul class="tags"><li>Logo design</li><li>Identity</li><li>Graphic design</li><li>Social assets</li></ul>
           </div>
         </article>
@@ -221,7 +213,7 @@
           <div class="stack__top mono"><span>04</span><span>Launch &amp; Security</span></div>
           <h3 class="stack__title">Launch <em>&amp; care</em></h3>
           <div class="stack__body">
-            <p>Secure hosting, SEO, analytics and ongoing maintenance — backed by real IT &amp; cybersecurity experience, so your site stays fast and safe.</p>
+            <p>Secure hosting, SEO, analytics and ongoing maintenance, backed by real IT &amp; cybersecurity experience so your site stays fast and safe.</p>
             <ul class="tags"><li>Hosting</li><li>SEO</li><li>Security hardening</li><li>Maintenance</li></ul>
           </div>
         </article>
@@ -235,7 +227,7 @@
       <div class="bigtype__row" data-dir="-1"><em>Make</em> noise <b>✺</b> <em>Make</em> noise <b>✺</b> <em>Make</em> noise <b>✺</b></div>
     </section>
 
-    <!-- ============ PROCESS (pinned clock) ============ -->
+    <!-- ============ PROCESS (pinned dial) ============ -->
     <section class="process" id="process">
       <div class="process__pin">
         <div class="process__head">
@@ -243,38 +235,48 @@
           <h2 class="section-title">From first call to <em>launch.</em></h2>
         </div>
 
-        <div class="process__clock" aria-hidden="true">
+        <div class="process__dial" aria-hidden="true">
           <svg viewBox="0 0 400 400">
-            <circle cx="200" cy="200" r="190" class="clock__face" />
-            <circle cx="200" cy="200" r="190" class="clock__progress" pathLength="1" />
-            <g class="clock__ticks"></g>
-            <line x1="200" y1="200" x2="200" y2="95" class="clock__hour" />
-            <line x1="200" y1="200" x2="200" y2="40" class="clock__minute" />
-            <circle cx="200" cy="200" r="7" class="clock__pin" />
+            <defs><path id="dialPath" d="M200,200 m-150,0 a150,150 0 1,1 300,0 a150,150 0 1,1 -300,0" /></defs>
+            <circle cx="200" cy="200" r="190" class="dial__face" />
+            <circle cx="200" cy="200" r="190" class="dial__progress" pathLength="1" />
+            <g class="dial__text">
+              <text><textPath href="#dialPath" textLength="936" lengthAdjust="spacing">DISCOVER ✺ DESIGN ✺ DEVELOP ✺ LAUNCH ✺ </textPath></text>
+            </g>
+            <circle cx="200" cy="200" r="118" class="dial__inner" />
+            <g class="dial__nodes">
+              <circle cx="200" cy="10" r="9" />
+              <circle cx="390" cy="200" r="9" />
+              <circle cx="200" cy="390" r="9" />
+              <circle cx="10" cy="200" r="9" />
+            </g>
           </svg>
-          <span class="clock__digital mono">00:00</span>
+          <div class="dial__center">
+            <div class="dial__count"><div class="dial__count-track"><span>01</span><span>02</span><span>03</span><span>04</span></div></div>
+            <span class="dial__status mono">0%</span>
+          </div>
         </div>
 
         <ol class="process__steps">
           <li class="step">
             <span class="step__num mono">01 / 04</span>
             <h3 class="step__title">Discover</h3>
-            <p>We dig into your goals, audience and competition to define what success looks like — and what makes you different.</p>
+            <p>We dig into your goals, audience and competition to define what success looks like and what makes you different.</p>
           </li>
           <li class="step">
             <span class="step__num mono">02 / 04</span>
             <h3 class="step__title">Design</h3>
-            <p>Moodboards, wireframes and high-fidelity designs, refined together until every pixel feels right.</p>
+            <p>Moodboards, wireframes and high fidelity designs, refined together until every pixel feels right.</p>
           </li>
           <li class="step">
             <span class="step__num mono">03 / 04</span>
             <h3 class="step__title">Develop</h3>
-            <p>Hand-coded, responsive and animated — tested on every screen size and browser that matters.</p>
+            <p>Coded by hand, responsive and animated, then tested on every screen size and browser that matters.</p>
           </li>
           <li class="step">
             <span class="step__num mono">04 / 04</span>
             <h3 class="step__title"><em>Launch</em></h3>
-            <p>Secure deployment, SEO and analytics. It's ten-eleven — your new site is live.</p>
+            <p>Secure deployment, SEO and analytics. Your new site is live and ready to make noise.</p>
           </li>
         </ol>
       </div>
@@ -328,7 +330,7 @@
           </div>
           <div class="footer__bottom mono">
             <span>&copy; <span data-year></span> TENELEVENMEDIA</span>
-            <span>Designed &amp; built in-house</span>
+            <span>Designed &amp; built in house</span>
             <a href="#top" class="link-underline" data-scroll-top>Back to top ↑</a>
           </div>
         </div>
@@ -338,7 +340,6 @@
 
   <script src="vendor/gsap.min.js"></script>
   <script src="vendor/ScrollTrigger.min.js"></script>
-  <script src="vendor/lenis.min.js"></script>
   <script src="js/projects.js"></script>
   <script src="js/screenshots.js"></script>
   <script src="js/fluid.js"></script>
