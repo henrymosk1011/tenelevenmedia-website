@@ -21,12 +21,10 @@ window.SITE = {
   email: "hello@tenelevenmedia.com",
   // Pacific time; shows PDT in summer and PST in winter automatically
   timezone: "America/Los_Angeles",
-  socials: [
-    { label: "Instagram", url: "https://instagram.com/" },
-    { label: "LinkedIn", url: "https://linkedin.com/" },
-    { label: "Behance", url: "https://behance.net/" },
-    { label: "Dribbble", url: "https://dribbble.com/" },
-  ],
+  // Add profiles as you set them up, e.g.
+  //   { label: "Instagram", url: "https://instagram.com/yourhandle" },
+  // The Socials links stay hidden while this list is empty.
+  socials: [],
 };
 
 window.PROJECTS = [

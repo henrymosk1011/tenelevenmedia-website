@@ -1219,7 +1219,7 @@ em {
 
 .footer__meta {
   display: grid;
-  grid-template-columns: repeat(3, auto);
+  grid-auto-flow: column;
   gap: clamp(1.5rem, 4vw, 5rem);
 }
 .footer__meta > div { display: grid; gap: 0.6rem; align-content: start; }
@@ -1303,7 +1303,7 @@ em {
   .process.is-pinned .process__steps { min-height: 16rem; }
   .process.is-pinned .step { align-content: start; }
 
-  .footer__meta { grid-template-columns: 1fr 1fr; }
+  .footer__meta { grid-template-columns: 1fr 1fr; grid-auto-flow: row; }
 }
 
 @media (max-width: 560px) {
