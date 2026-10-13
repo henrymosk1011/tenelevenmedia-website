@@ -8,7 +8,7 @@
      url      : live website (shown as "Visit site")
      category : short label, e.g. "Ecommerce", "Musician", "Restaurant"
                 (avoid dashes; the site is written without them)
-     year     : year launched
+     year     : (optional) year launched; leave it out to hide years
      image    : (optional) path to a screenshot, e.g. "assets/work/acme.jpg"
                 Run `node scripts/screenshot.mjs` to generate these
                 automatically from each project's url. Tall, full-page
@@ -31,42 +31,44 @@ window.SITE = {
 
 window.PROJECTS = [
   {
-    title: "Hlix Labs",
-    url: "https://hlixlabs.com/",
-    category: "Brand & Website",
-    year: "2026",
+    title: "cyberxLA", // brand spelling: lower case x, upper case LA
+    url: "https://cyberx.la/",
+    category: "Cybersecurity",
     image: "",
-    accent: "#ff4d1f",
+    accent: "#d6ff3f",
+  },
+  {
+    title: "hlix",
+    url: "https://hlixlabs.com/",
+    category: "Ecommerce",
+    image: "",
+    accent: "#33e6b0",
   },
   {
     title: "SMB CPA Group",
     url: "https://www.smbcpagroup.com/",
     category: "Accounting Firm",
-    year: "2026",
     image: "",
-    accent: "#3da5ff",
+    accent: "#ed3812",
   },
   {
     title: "Revive Drip Haus",
     url: "https://www.revivedriphaus.com/",
-    category: "Wellness",
-    year: "2026",
+    category: "Mobile IV Therapy",
     image: "",
     accent: "#00c2a8",
   },
   {
-    title: "The Hummingbird Nest",
+    title: "The HummingBird Nest",
     url: "https://www.thehummingbirdnest.org/",
-    category: "Nonprofit",
-    year: "2026",
+    category: "Child Development",
     image: "",
     accent: "#6b5bff",
   },
   {
     title: "The Social Club Kids",
     url: "https://www.thesocialclubkids.com/",
-    category: "Kids & Family",
-    year: "2026",
+    category: "Kids Programs",
     image: "",
     accent: "#ff3d8b",
   },

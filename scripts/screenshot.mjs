@@ -71,16 +71,18 @@ for (const p of projects) {
     await page.waitForTimeout(2000);
 
     // Scroll through the page so lazy-loaded images and scroll animations fire.
+    // Small steps and a pass one screen past the capture height, so reveal
+    // animations near the bottom edge get triggered too.
     await page.evaluate(async (limit) => {
-      const step = window.innerHeight * 0.8;
-      const end = Math.min(document.documentElement.scrollHeight, limit);
+      const step = window.innerHeight * 0.5;
+      const end = Math.min(document.documentElement.scrollHeight, limit + window.innerHeight);
       for (let y = 0; y < end; y += step) {
         window.scrollTo(0, y);
-        await new Promise((r) => setTimeout(r, 250));
+        await new Promise((r) => setTimeout(r, 300));
       }
       window.scrollTo(0, 0);
     }, maxHeight);
-    await page.waitForTimeout(1200);
+    await page.waitForTimeout(1500);
 
     const height = viewportOnly
       ? 900

@@ -38,7 +38,7 @@ window.PROJECTS = [
     title: "Client Name",
     url: "https://client-site.com",
     category: "E-commerce",
-    year: "2026",
+    year: "2026",         // optional; leave out to hide years
     image: "",            // optional — see screenshots below
     accent: "#ff4d1f",    // colour of the generated cover / hover glow
   },
