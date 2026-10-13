@@ -1052,6 +1052,10 @@ em {
   align-items: center;
   gap: 1rem;
 }
+.index--no-year .index__head,
+.index--no-year .index__row a { grid-template-columns: 4rem minmax(0, 1fr) minmax(8rem, 16rem) 3rem; }
+.index--no-year .index__head span:nth-child(4),
+.index--no-year .index__year { display: none; }
 .index__head {
   color: var(--bone-dim);
   padding-bottom: 1rem;
@@ -1265,6 +1269,11 @@ em {
   .index__row a { grid-template-columns: 2.6rem minmax(0, 1fr) 4.5rem 2rem; }
   .index__head span:nth-child(3),
   .index__row .index__cat { display: none; }
+  /* Without years, keep Type in that slot instead */
+  .index--no-year .index__head,
+  .index--no-year .index__row a { grid-template-columns: 2.6rem minmax(0, 1fr) minmax(6rem, 12rem) 2rem; }
+  .index--no-year .index__head span:nth-child(3),
+  .index--no-year .index__row .index__cat { display: block; }
 }
 
 @media (max-width: 900px) {
@@ -1302,6 +1311,8 @@ em {
   .index__head { display: none; }
   .index__row a { grid-template-columns: 1.8rem minmax(0, 1fr) 1.6rem; gap: 0.75rem; padding-inline: 0.2rem; }
   .index__row .index__year { display: none; }
+  .index--no-year .index__row a { grid-template-columns: 1.8rem minmax(0, 1fr) 1.6rem; }
+  .index--no-year .index__row .index__cat { display: none; }
   .card__meta { grid-template-columns: auto 1fr; }
   .card__visit { grid-column: 2; }
   .footer__meta { grid-template-columns: 1fr; gap: 1.2rem; }

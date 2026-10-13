@@ -99,7 +99,7 @@
               <span class="card__num mono">${pad(i + 1)}</span>
               <h3 class="card__title">${esc(p.title)}</h3>
               <span class="card__visit mono">Visit site <b>↗</b></span>
-              <span class="card__cat mono">${esc(p.category || "")} · ${esc(p.year || "")}</span>
+              <span class="card__cat mono">${[p.category, p.year].filter(Boolean).map(esc).join(" · ")}</span>
             </div>
           </a>
         </article>`;
@@ -110,6 +110,8 @@
     const list = $("[data-index]");
     const preview = $("[data-preview]");
     if (!list) return;
+    // Drop the Year column when no project lists a year.
+    list.closest(".index")?.classList.toggle("index--no-year", !PROJECTS.some((p) => p.year));
     list.innerHTML = PROJECTS.map(
       (p, i) => `
       <li class="index__row" data-fade>

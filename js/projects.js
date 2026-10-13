@@ -8,7 +8,7 @@
      url      : live website (shown as "Visit site")
      category : short label, e.g. "Ecommerce", "Musician", "Restaurant"
                 (avoid dashes; the site is written without them)
-     year     : year launched
+     year     : (optional) year launched; leave it out to hide years
      image    : (optional) path to a screenshot, e.g. "assets/work/acme.jpg"
                 Run `node scripts/screenshot.mjs` to generate these
                 automatically from each project's url. Tall, full-page
@@ -31,51 +31,45 @@ window.SITE = {
 
 window.PROJECTS = [
   {
-    title: "Project One",
-    url: "https://example.com",
-    category: "Brand & Website",
-    year: "2026",
+    title: "cyberxLA", // brand spelling: lower case x, upper case LA
+    url: "https://cyberx.la/",
+    category: "Cybersecurity",
     image: "",
-    accent: "#ff4d1f",
+    accent: "#d6ff3f",
   },
   {
-    title: "Project Two",
-    url: "https://example.com",
+    title: "hlix",
+    url: "https://hlixlabs.com/",
     category: "Ecommerce",
-    year: "2026",
     image: "",
-    accent: "#6b5bff",
+    accent: "#33e6b0",
   },
   {
-    title: "Project Three",
-    url: "https://example.com",
-    category: "Musician / Artist",
-    year: "2025",
+    title: "SMB CPA Group",
+    url: "https://www.smbcpagroup.com/",
+    category: "Accounting Firm",
     image: "",
-    accent: "#00c2a8",
+    accent: "#ed3812",
   },
   {
-    title: "Project Four",
-    url: "https://example.com",
-    category: "Small Business",
-    year: "2025",
+    title: "Revive Drip Haus",
+    url: "https://www.revivedriphaus.com/",
+    category: "Mobile IV Therapy",
     image: "",
-    accent: "#ffb21f",
+    accent: "#19a352",
   },
   {
-    title: "Project Five",
-    url: "https://example.com",
-    category: "Portfolio",
-    year: "2025",
+    title: "The HummingBird Nest",
+    url: "https://www.thehummingbirdnest.org/",
+    category: "Child Development",
     image: "",
-    accent: "#ff3d8b",
+    accent: "#74b996",
   },
   {
-    title: "Project Six",
-    url: "https://example.com",
-    category: "Landing Page",
-    year: "2024",
+    title: "The Social Club Kids",
+    url: "https://www.thesocialclubkids.com/",
+    category: "Kids Programs",
     image: "",
-    accent: "#3da5ff",
+    accent: "#97c680",
   },
 ];
