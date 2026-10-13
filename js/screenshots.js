@@ -2,5 +2,9 @@
    Safe to leave empty; projects without a screenshot get a generated cover. */
 window.SCREENSHOTS = {
   "cyberxla": "assets/work/cyberxla.jpg",
-  "hlix": "assets/work/hlix.jpg"
+  "hlix": "assets/work/hlix.jpg",
+  "smb-cpa-group": "assets/work/smb-cpa-group.jpg",
+  "revive-drip-haus": "assets/work/revive-drip-haus.jpg",
+  "the-hummingbird-nest": "assets/work/the-hummingbird-nest.jpg",
+  "the-social-club-kids": "assets/work/the-social-club-kids.jpg"
 };

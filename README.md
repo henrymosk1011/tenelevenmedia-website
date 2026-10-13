@@ -58,9 +58,12 @@ npx playwright install chromium
 npm run shots                 # captures every project
 npm run shots -- --only client-name   # just one (slug = title in kebab-case)
 npm run shots -- --viewport           # first screen only instead of full page
+npm run shots -- --only client-name --stitch   # if a capture has blank gaps (see below)
 ```
 
 This saves JPEGs to `assets/work/` and writes `js/screenshots.js`, which the site picks up automatically. Full-page captures (up to 4800px tall by default) scroll inside the browser frame when you hover a card.
+
+Some sites, often Webflow builds, hide sections again once you scroll past them, so those sections come out blank in a full-page capture. `--stitch` fixes that by capturing one screen at a time and joining them.
 
 You can also use your own image: put it in `assets/work/` and set `image: "assets/work/your-file.jpg"` on the project.
 

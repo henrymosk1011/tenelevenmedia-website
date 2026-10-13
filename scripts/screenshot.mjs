@@ -12,6 +12,9 @@
      --max-height <px>    tallest capture in px (default 4800). Tall captures
                           scroll inside the browser frame on hover.
      --viewport           capture only the first screen (1440×900)
+     --stitch             capture one screen at a time and join them. Use it
+                          for sites whose animations reverse once scrolled
+                          past, which show up as blank gaps otherwise.
 
    Saves JPEGs to assets/work/ and writes js/screenshots.js, which the site
    reads automatically. Projects with an explicit `image` keep that image.
@@ -33,6 +36,7 @@ const opt = (name, fallback) => {
 const only = opt("only", null);
 const maxHeight = parseInt(opt("max-height", "4800"), 10);
 const viewportOnly = flag("viewport");
+const stitch = flag("stitch");
 
 const slugify = (s) =>
   String(s).toLowerCase().normalize("NFKD").replace(/[^\w\s-]/g, "").trim().replace(/[\s_-]+/g, "-");
@@ -55,6 +59,55 @@ try {
 } catch {
   console.error("Playwright is not installed. Run `npm install` then `npx playwright install chromium`.");
   process.exit(1);
+}
+
+// Screenshot the page a screen at a time, as a visitor sees it, and join the
+// pieces on a canvas. Pieces are taken every half screen and only their top
+// half is kept, so each part of the page is captured after it has been on
+// screen long enough to finish animating in. The first and last pieces are
+// kept whole, and the first is drawn last so hero videos have no seam.
+// Fixed and sticky headers are kept in the first piece only.
+async function stitchCapture(page, height) {
+  const { width, height: vh } = page.viewportSize();
+  const step = Math.floor(vh / 2);
+  const tiles = [];
+  for (let y = 0; ; y += step) {
+    const top = await page.evaluate((y) => (window.scrollTo(0, y), window.scrollY), y);
+    const last = top < y || top + vh >= height;
+    await page.waitForTimeout(1000);
+    // Hide fixed or sticky headers. Checked on every piece, since some headers
+    // only become fixed on scroll.
+    if (tiles.length) {
+      await page.evaluate(() => {
+        for (const el of document.querySelectorAll("body *")) {
+          const { position } = getComputedStyle(el);
+          const r = el.getBoundingClientRect();
+          if ((position === "fixed" || position === "sticky") && r.top < 50 && r.bottom > 0 && r.height < 200) {
+            el.style.visibility = "hidden";
+          }
+        }
+      });
+    }
+    tiles.push({ top, keep: last || !tiles.length ? vh : step, src: `data:image/png;base64,${(await page.screenshot()).toString("base64")}` });
+    if (last) break;
+  }
+  const canvasPage = await page.context().newPage();
+  const jpeg = await canvasPage.evaluate(
+    async ({ tiles, width, height }) => {
+      const canvas = Object.assign(document.createElement("canvas"), { width, height });
+      const ctx = canvas.getContext("2d");
+      for (const t of [...tiles.slice(1), tiles[0]]) {
+        const img = new Image();
+        img.src = t.src;
+        await img.decode();
+        ctx.drawImage(img, 0, 0, width, t.keep, 0, t.top, width, t.keep);
+      }
+      return canvas.toDataURL("image/jpeg", 0.82);
+    },
+    { tiles, width, height }
+  );
+  await canvasPage.close();
+  return Buffer.from(jpeg.split(",")[1], "base64");
 }
 
 await mkdir(path.join(ROOT, "assets/work"), { recursive: true });
@@ -88,13 +141,17 @@ for (const p of projects) {
       ? 900
       : Math.min(maxHeight, await page.evaluate(() => document.documentElement.scrollHeight));
 
-    await page.screenshot({
-      path: path.join(ROOT, file),
-      type: "jpeg",
-      quality: 82,
-      fullPage: !viewportOnly,
-      clip: { x: 0, y: 0, width: 1440, height },
-    });
+    if (stitch && !viewportOnly) {
+      await writeFile(path.join(ROOT, file), await stitchCapture(page, height));
+    } else {
+      await page.screenshot({
+        path: path.join(ROOT, file),
+        type: "jpeg",
+        quality: 82,
+        fullPage: !viewportOnly,
+        clip: { x: 0, y: 0, width: 1440, height },
+      });
+    }
     map[slug] = file;
     console.log(`saved ${file} (${height}px tall)`);
   } catch (err) {

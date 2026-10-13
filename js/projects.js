@@ -56,20 +56,20 @@ window.PROJECTS = [
     url: "https://www.revivedriphaus.com/",
     category: "Mobile IV Therapy",
     image: "",
-    accent: "#00c2a8",
+    accent: "#19a352",
   },
   {
     title: "The HummingBird Nest",
     url: "https://www.thehummingbirdnest.org/",
     category: "Child Development",
     image: "",
-    accent: "#6b5bff",
+    accent: "#74b996",
   },
   {
     title: "The Social Club Kids",
     url: "https://www.thesocialclubkids.com/",
     category: "Kids Programs",
     image: "",
-    accent: "#ff3d8b",
+    accent: "#97c680",
   },
 ];
