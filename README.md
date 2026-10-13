@@ -83,7 +83,7 @@ The site is static, so any of these work:
 
 ### Custom domain (www.tenelevenmedia.com)
 
-The domain is registered at Squarespace. In Squarespace → Domains → tenelevenmedia.com → DNS → DNS Settings, delete the **Squarespace Defaults** record set (its `A @` and `CNAME www` records point at Squarespace's servers), make sure domain forwarding is off, then add these under **Custom records**:
+The domain is registered at Squarespace. Add the custom domain on the GitHub side first (the `CNAME` file on `main` does this), then in Squarespace → Domains → tenelevenmedia.com → DNS → DNS Settings → **Custom records**, point the web records at GitHub Pages:
 
 | Type | Name | Value |
 | --- | --- | --- |
@@ -92,6 +92,8 @@ The domain is registered at Squarespace. In Squarespace → Domains → teneleve
 | A | `@` | `185.199.109.153` |
 | A | `@` | `185.199.110.153` |
 | A | `@` | `185.199.111.153` |
+
+Leave the other records alone: the `MX`, `autodiscover` CNAME and SPF `TXT` records run the Microsoft 365 email, and the `googlehosted.com` CNAME is a Google verification record.
 
 Then in GitHub → Settings → Pages, confirm the custom domain reads `www.tenelevenmedia.com`, wait for the DNS check to pass, and tick **Enforce HTTPS**. The bare `tenelevenmedia.com` redirects to `www` automatically.
 
