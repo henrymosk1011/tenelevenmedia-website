@@ -18,6 +18,8 @@
 
    Saves JPEGs to assets/work/ and writes js/screenshots.js, which the site
    reads automatically. Projects with an explicit `image` keep that image.
+   Each full-page capture also gets a "-poster" copy cropped to the top of the
+   page, which is what the cards show; the full image loads on hover.
    ========================================================================== */
 
 import { readFile, writeFile, mkdir } from "node:fs/promises";
@@ -110,6 +112,23 @@ async function stitchCapture(page, height) {
   return Buffer.from(jpeg.split(",")[1], "base64");
 }
 
+// Crop the top of a capture to the cards' 16:10 frame.
+async function writePoster(file, poster) {
+  const canvasPage = await context.newPage();
+  const src = `data:image/jpeg;base64,${(await readFile(path.join(ROOT, file))).toString("base64")}`;
+  const jpeg = await canvasPage.evaluate(async (src) => {
+    const img = new Image();
+    img.src = src;
+    await img.decode();
+    const height = Math.min(img.height, Math.round(img.width / 1.6));
+    const canvas = Object.assign(document.createElement("canvas"), { width: img.width, height });
+    canvas.getContext("2d").drawImage(img, 0, 0);
+    return canvas.toDataURL("image/jpeg", 0.82);
+  }, src);
+  await canvasPage.close();
+  await writeFile(path.join(ROOT, poster), Buffer.from(jpeg.split(",")[1], "base64"));
+}
+
 await mkdir(path.join(ROOT, "assets/work"), { recursive: true });
 const browser = await chromium.launch();
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
@@ -152,7 +171,13 @@ for (const p of projects) {
         clip: { x: 0, y: 0, width: 1440, height },
       });
     }
-    map[slug] = file;
+    if (viewportOnly) {
+      map[slug] = file;
+    } else {
+      const poster = `assets/work/${slug}-poster.jpg`;
+      await writePoster(file, poster);
+      map[slug] = { poster, full: file };
+    }
     console.log(`saved ${file} (${height}px tall)`);
   } catch (err) {
     console.log(`failed: ${err.message}`);
