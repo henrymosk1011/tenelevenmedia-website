@@ -231,6 +231,9 @@
 
   const { gsap, ScrollTrigger } = window;
   gsap.registerPlugin(ScrollTrigger);
+  // Don't re-measure when a phone's address bar shows or hides mid-scroll;
+  // that would shift pinned sections while the user is scrolling.
+  ScrollTrigger.config({ ignoreMobileResize: true });
 
   // Native scrolling (no smooth-scroll library) so the page responds instantly.
   const scrollToTarget = (target) => {
@@ -476,22 +479,37 @@
     section.classList.add("is-pinned");
 
     const distance = () => track.scrollWidth - window.innerWidth;
+    const progressBar = $(".work__progress i");
+
+    // Cards sliding under a still cursor would keep starting their hover effects
+    // (the shadow glow and the screenshot scroll), which are costly to repaint
+    // every frame. Ignore the pointer while the track moves.
+    let hoverTimer;
+    function pauseHover() {
+      section.classList.add("is-scrolling");
+      clearTimeout(hoverTimer);
+      hoverTimer = setTimeout(() => section.classList.remove("is-scrolling"), 150);
+    }
 
     const tween = gsap.to(track, {
       x: () => -distance(),
       ease: "none",
+      // runs every frame the track moves, including while it glides to a stop
+      onUpdate() {
+        if (progressBar) gsap.set(progressBar, { scaleX: this.progress() });
+        if (finePointer) pauseHover();
+      },
       scrollTrigger: {
         trigger: section,
         start: "top top",
         end: () => `+=${distance()}`,
         pin: ".work__pin",
-        scrub: true,
+        // glide to the scroll position over half a second, so wheel steps and
+        // fast flicks move the track smoothly instead of jumping
+        scrub: 0.5,
         invalidateOnRefresh: true,
         anticipatePin: 1,
-        onUpdate: (self) => {
-          gsap.set(".work__progress i", { scaleX: self.progress });
-          skewTo(gsap.utils.clamp(-7, 7, self.getVelocity() / -400));
-        },
+        onUpdate: (self) => skewTo(gsap.utils.clamp(-7, 7, self.getVelocity() / -400)),
       },
     });
 
@@ -575,9 +593,6 @@
       stagger: 0.1,
       scrollTrigger: { trigger: ".work__outro", containerAnimation: tween, start: "left 95%", end: "left 50%", scrub: true },
     });
-
-    // images load → re-measure
-    $$("img", track).forEach((img) => img.complete || img.addEventListener("load", () => ScrollTrigger.refresh(), { once: true }));
   }
 
   /* ------------------------------------------------------------------ *

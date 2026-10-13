@@ -567,7 +567,9 @@ em {
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
 }
-.work.is-pinned .work__pin { overflow: hidden; }
+/* pinned: the track moves by transform, so the pin must never scroll or snap */
+.work.is-pinned .work__pin { overflow: hidden; scroll-snap-type: none; }
+.work.is-scrolling .card__link { pointer-events: none; }
 .work__track {
   display: flex;
   align-items: center;
