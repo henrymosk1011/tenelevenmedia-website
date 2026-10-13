@@ -61,10 +61,13 @@
       a.href = `mailto:${email}`;
     });
     $$("[data-email-link]").forEach((a) => (a.href = `mailto:${email}?subject=New%20project%20enquiry`));
+    const socials = SITE.socials || [];
     $$("[data-socials]").forEach((ul) => {
-      ul.innerHTML = (SITE.socials || [])
+      ul.innerHTML = socials
         .map((s) => `<li><a class="link-underline" href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a></li>`)
         .join("");
+      // With no profiles yet, hide the list and, in the footer, its "Socials" label.
+      (ul.closest(".footer__meta > div") || ul).style.display = socials.length ? "" : "none";
     });
     $$("[data-year]").forEach((el) => (el.textContent = new Date().getFullYear()));
     $$("[data-count]").forEach((el) => (el.textContent = `(${pad(PROJECTS.length)})`));
