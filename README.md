@@ -81,8 +81,24 @@ Opening `index.html` straight from the file system mostly works, but a local ser
 
 The site is static, so any of these work:
 
-- **GitHub Pages:** go to Settings → Pages → Deploy from branch → `main` / root. The `.nojekyll` file is already there.
+- **GitHub Pages:** go to Settings → Pages → Deploy from branch → `main` / root. The `.nojekyll` file is already there, and the `CNAME` file sets the custom domain to `www.tenelevenmedia.com`.
 - **Netlify / Vercel / Cloudflare Pages:** import the repo with no build command and `/` as the output folder.
+
+### Custom domain (www.tenelevenmedia.com)
+
+The domain is registered at Squarespace. Add the custom domain on the GitHub side first (the `CNAME` file on `main` does this), then in Squarespace → Domains → tenelevenmedia.com → DNS → DNS Settings → **Custom records**, point the web records at GitHub Pages:
+
+| Type | Name | Value |
+| --- | --- | --- |
+| CNAME | `www` | `henrymosk1011.github.io` |
+| A | `@` | `185.199.108.153` |
+| A | `@` | `185.199.109.153` |
+| A | `@` | `185.199.110.153` |
+| A | `@` | `185.199.111.153` |
+
+Leave the other records alone: the `MX`, `autodiscover` CNAME and SPF `TXT` records run the Microsoft 365 email, and the `googlehosted.com` CNAME is a Google verification record.
+
+Then in GitHub → Settings → Pages, confirm the custom domain reads `www.tenelevenmedia.com`, wait for the DNS check to pass, and tick **Enforce HTTPS**. The bare `tenelevenmedia.com` redirects to `www` automatically.
 
 ## Customising
 
@@ -102,6 +118,7 @@ js/fluid.js           WebGL liquid gradient
 vendor/               GSAP 3.13 + ScrollTrigger (self-hosted)
 scripts/screenshot.mjs  Playwright screenshot capture
 assets/               favicon, project screenshots
+CNAME                 custom domain for GitHub Pages
 ```
 
 GSAP is used under the [GreenSock standard license](https://gsap.com/standard-license) (free, including for commercial sites).
