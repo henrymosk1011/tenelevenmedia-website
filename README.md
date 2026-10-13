@@ -83,7 +83,7 @@ The site is static, so any of these work:
 
 ### Custom domain (www.tenelevenmedia.com)
 
-The domain is registered at GoDaddy. In GoDaddy → My Products → tenelevenmedia.com → DNS, set these records (delete GoDaddy's default "Parked" `A @` record and its `CNAME www → @` record first):
+The domain is registered at Squarespace. In Squarespace → Domains → tenelevenmedia.com → DNS → DNS Settings, delete the **Squarespace Defaults** record set (its `A @` and `CNAME www` records point at Squarespace's servers), make sure domain forwarding is off, then add these under **Custom records**:
 
 | Type | Name | Value |
 | --- | --- | --- |
