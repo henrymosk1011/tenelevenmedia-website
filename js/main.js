@@ -41,7 +41,12 @@
 
   const pad = (n) => String(n).padStart(2, "0");
 
-  const imageFor = (p) => p.image || SHOTS[slugify(p.title)] || "";
+  // A screenshot is a path, or { poster, full } from scripts/screenshot.mjs: the
+  // poster is the top of the page (what a card shows) and full is the whole page.
+  const imageFor = (p) => {
+    const shot = p.image || SHOTS[slugify(p.title)] || "";
+    return typeof shot === "string" ? { poster: shot, full: shot } : shot;
+  };
 
   // Split a title into "Word *word*" — last word set in italic serif for flair.
   const flairTitle = (title) => {
@@ -87,9 +92,9 @@
     const wrap = $("[data-cards]");
     if (!wrap) return;
     wrap.innerHTML = PROJECTS.map((p, i) => {
-      const img = imageFor(p);
-      const media = img
-        ? `<img src="${esc(img)}" alt="Screenshot of the ${esc(p.title)} website" loading="lazy" decoding="async" />`
+      const { poster, full } = imageFor(p);
+      const media = poster
+        ? `<img src="${esc(poster)}" data-poster="${esc(poster)}" data-full="${esc(full)}" alt="Screenshot of the ${esc(p.title)} website" loading="lazy" decoding="async" />`
         : coverHTML(p);
       return `
         <article class="card" style="--accent:${esc(p.accent || "#ff4d1f")}">
@@ -129,9 +134,9 @@
     ).join("");
     if (preview) {
       preview.innerHTML = PROJECTS.map((p) => {
-        const img = imageFor(p);
+        const { poster } = imageFor(p);
         return `<div class="index__preview-item" style="--accent:${esc(p.accent || "#ff4d1f")}">${
-          img ? `<img src="${esc(img)}" alt="" loading="lazy" decoding="async" />` : coverHTML(p)
+          poster ? `<img src="${esc(poster)}" alt="" loading="lazy" decoding="async" />` : coverHTML(p)
         }</div>`;
       }).join("");
     }
@@ -491,12 +496,34 @@
       hoverTimer = setTimeout(() => section.classList.remove("is-scrolling"), 150);
     }
 
+    // Cards lean with the speed of the track itself. The track glides between
+    // mouse wheel notches, so the lean stays steady instead of springing back
+    // toward zero after every notch; it settles once the track has stopped.
+    const skewSetters = cards.map((c) => gsap.quickTo(c, "skewX", { duration: 0.6, ease: "power3.out" }));
+    let lastX = 0;
+    let lastT = 0;
+    let skewTimer;
+    function skewWithTrack() {
+      const x = gsap.getProperty(track, "x");
+      const t = performance.now();
+      const v = lastT ? (x - lastX) / Math.max(t - lastT, 1) : 0; // px per ms
+      lastX = x;
+      lastT = t;
+      skewSetters.forEach((set) => set(gsap.utils.clamp(-7, 7, v * 2.5)));
+      clearTimeout(skewTimer);
+      skewTimer = setTimeout(() => {
+        lastT = 0;
+        skewSetters.forEach((set) => set(0));
+      }, 100);
+    }
+
     const tween = gsap.to(track, {
       x: () => -distance(),
       ease: "none",
       // runs every frame the track moves, including while it glides to a stop
       onUpdate() {
         if (progressBar) gsap.set(progressBar, { scaleX: this.progress() });
+        skewWithTrack();
         if (finePointer) pauseHover();
       },
       scrollTrigger: {
@@ -504,23 +531,13 @@
         start: "top top",
         end: () => `+=${distance()}`,
         pin: ".work__pin",
-        // glide to the scroll position over half a second, so wheel steps and
-        // fast flicks move the track smoothly instead of jumping
-        scrub: 0.5,
+        // glide to the scroll position, so mouse wheel notches and fast flicks
+        // move the track smoothly instead of in jumps
+        scrub: 0.8,
         invalidateOnRefresh: true,
         anticipatePin: 1,
-        onUpdate: (self) => skewTo(gsap.utils.clamp(-7, 7, self.getVelocity() / -400)),
       },
     });
-
-    // velocity skew on the cards
-    const skewSetters = cards.map((c) => gsap.quickTo(c, "skewX", { duration: 0.6, ease: "power3.out" }));
-    let skewTimer;
-    function skewTo(v) {
-      skewSetters.forEach((s) => s(v));
-      clearTimeout(skewTimer);
-      skewTimer = setTimeout(() => skewSetters.forEach((s) => s(0)), 120);
-    }
 
     // title reveal
     gsap.from(".work__title .line > span", {
@@ -572,16 +589,45 @@
         },
       });
 
-      // full-page screenshots scroll inside the frame on hover
+      // On hover the full-page screenshot scrolls inside the frame. Cards show
+      // the light poster image; the full one is decoded only while hovered,
+      // which keeps the gallery from decoding six huge images as it scrolls.
       const img = $("img", card);
       const shot = $(".card__shot", card);
       if (img && shot) {
         const link = $(".card__link", card);
-        link.addEventListener("mouseenter", () => {
+        const { poster, full } = img.dataset;
+        let hovered = false;
+        link.addEventListener("mouseenter", async () => {
+          hovered = true;
+          if (full !== poster && img.getAttribute("src") !== full) {
+            const pre = new Image();
+            pre.src = full;
+            try {
+              await pre.decode();
+            } catch {
+              return;
+            }
+            if (!hovered) return;
+            img.src = full; // same top of page as the poster, so the swap is invisible
+            if (!img.complete) await new Promise((r) => img.addEventListener("load", r, { once: true }));
+            if (!hovered) return;
+          }
           const overflow = img.offsetHeight - shot.offsetHeight;
           if (overflow > 20) gsap.to(img, { y: -overflow, duration: Math.min(8, overflow / 300), ease: "power1.inOut", overwrite: true });
         });
-        link.addEventListener("mouseleave", () => gsap.to(img, { y: 0, duration: 1.2, ease: "expo.out", overwrite: true }));
+        link.addEventListener("mouseleave", () => {
+          hovered = false;
+          gsap.to(img, {
+            y: 0,
+            duration: 1.2,
+            ease: "expo.out",
+            overwrite: true,
+            onComplete: () => {
+              if (!hovered && img.getAttribute("src") !== poster) img.src = poster;
+            },
+          });
+        });
       }
     });
 

@@ -61,7 +61,7 @@ npm run shots -- --viewport           # first screen only instead of full page
 npm run shots -- --only client-name --stitch   # if a capture has blank gaps (see below)
 ```
 
-This saves JPEGs to `assets/work/` and writes `js/screenshots.js`, which the site picks up automatically. Full-page captures (up to 4800px tall by default) scroll inside the browser frame when you hover a card.
+This saves JPEGs to `assets/work/` and writes `js/screenshots.js`, which the site picks up automatically. Full-page captures (up to 4800px tall by default) scroll inside the browser frame when you hover a card. Each capture also gets a `-poster.jpg` copy cropped to the top of the page: the cards show that light image, and the full-length one loads only while a card is hovered, which keeps the gallery smooth.
 
 Some sites, often Webflow builds, hide sections again once you scroll past them, so those sections come out blank in a full-page capture. `--stitch` fixes that by capturing one screen at a time and joining them.
 
