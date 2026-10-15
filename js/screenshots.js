@@ -24,5 +24,9 @@ window.SCREENSHOTS = {
   "the-social-club-kids": {
     "poster": "assets/work/the-social-club-kids-poster.jpg",
     "full": "assets/work/the-social-club-kids.jpg"
+  },
+  "scent-and-story": {
+    "poster": "assets/work/scent-and-story-poster.jpg",
+    "full": "assets/work/scent-and-story.jpg"
   }
 };
