@@ -28,5 +28,13 @@ window.SCREENSHOTS = {
   "scent-and-story": {
     "poster": "assets/work/scent-and-story-poster.jpg",
     "full": "assets/work/scent-and-story.jpg"
+  },
+  "starlight-hospice": {
+    "poster": "assets/work/starlight-hospice-poster.jpg",
+    "full": "assets/work/starlight-hospice.jpg"
+  },
+  "starlight-home-health": {
+    "poster": "assets/work/starlight-home-health-poster.jpg",
+    "full": "assets/work/starlight-home-health.jpg"
   }
 };
