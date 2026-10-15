@@ -781,22 +781,53 @@
     const yTo = gsap.quickTo(box, "y", { duration: 0.12, ease: "power2.out" });
     const rTo = gsap.quickTo(box, "rotation", { duration: 0.5, ease: "power3.out" });
     let lastX = 0;
+    let lastY = 0;
+    let over = false; // pointer is over the list, so the preview is showing
+    let current = 0; // project the track is showing
+
+    // Show or hide the preview for whatever element is now under the pointer.
+    // Each tween replaces the one before it: crossing the list quickly (as a
+    // fast scroll does) used to let the slower grow tween finish after the
+    // shrink, leaving the preview stuck on screen.
+    function sync(el) {
+      const inList = !!el && list.contains(el);
+      const a = inList && el.closest("a[data-i]");
+      if (a && +a.dataset.i !== current) {
+        current = +a.dataset.i;
+        gsap.to(track, { yPercent: -100 * current, duration: 0.7, ease: "expo.out", overwrite: "auto" });
+      }
+      if (inList === over) return;
+      over = inList;
+      gsap.to(box, { scale: over ? 1 : 0, duration: over ? 0.6 : 0.5, ease: "expo.out", overwrite: "auto" });
+    }
 
     window.addEventListener("pointermove", (e) => {
       xTo(e.clientX);
       yTo(e.clientY);
       rTo(gsap.utils.clamp(-12, 12, (e.clientX - lastX) * 0.6));
       lastX = e.clientX;
+      lastY = e.clientY;
     });
 
-    list.addEventListener("pointerover", (e) => {
-      const a = e.target.closest("a[data-i]");
-      if (!a) return;
-      const i = +a.dataset.i;
-      gsap.to(track, { yPercent: -100 * i, duration: 0.7, ease: "expo.out" });
-    });
-    list.addEventListener("pointerenter", () => gsap.to(box, { scale: 1, duration: 0.6, ease: "expo.out" }));
-    list.addEventListener("pointerleave", () => gsap.to(box, { scale: 0, duration: 0.5, ease: "expo.out" }));
+    list.addEventListener("pointerover", (e) => sync(e.target));
+    list.addEventListener("pointerleave", () => sync(null));
+
+    // Browsers don't reliably send pointer events when the page scrolls under
+    // a still mouse (Safari waits until it moves), so while the preview is up,
+    // check what's under the pointer after each scroll.
+    let checking = false;
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (!over || checking) return;
+        checking = true;
+        requestAnimationFrame(() => {
+          checking = false;
+          sync(document.elementFromPoint(lastX, lastY));
+        });
+      },
+      { passive: true }
+    );
   }
 
   /* ------------------------------------------------------------------ *
