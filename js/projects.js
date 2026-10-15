@@ -51,10 +51,10 @@ window.PROJECTS = [
   },
   {
     title: "Starlight Home Health",
-    url: "https://www.starlighthomehealth.com/",
+    url: "https://www.starlighthh.com/",
     category: "Home Health Care",
     image: "",
-    accent: "#d4a145",
+    accent: "#fccc27",
   },
   {
     title: "hlix",
