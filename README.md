@@ -59,11 +59,14 @@ npm run shots                 # captures every project
 npm run shots -- --only client-name   # just one (slug = title in kebab-case)
 npm run shots -- --viewport           # first screen only instead of full page
 npm run shots -- --only client-name --stitch   # if a capture has blank gaps (see below)
+npm run shots -- --only client-name --reduced-motion   # if a site pins sections (see below)
 ```
 
 This saves JPEGs to `assets/work/` and writes `js/screenshots.js`, which the site picks up automatically. Full-page captures (up to 4800px tall by default) scroll inside the browser frame when you hover a card. Each capture also gets a `-poster.jpg` copy cropped to the top of the page: the cards show that light image, and the full-length one loads only while a card is hovered, which keeps the gallery smooth.
 
 Some sites, often Webflow builds, hide sections again once you scroll past them, so those sections come out blank in a full-page capture. `--stitch` fixes that by capturing one screen at a time and joining them.
+
+Sites that pin sections in place while you scroll (Scent and Story is one) come out with blank gaps in a normal capture and doubled sections when stitched. `--reduced-motion` loads the site with the system "reduce motion" setting on, which on sites that support it shows every section in place with no pinning. If a site ignores that setting, the capture comes out the same as a normal one. If photos far down the page come out as blank boxes, add `--stitch` as well, so every part of the page is captured on screen (that's how Scent and Story was captured).
 
 You can also use your own image: put it in `assets/work/` and set `image: "assets/work/your-file.jpg"` on the project.
 

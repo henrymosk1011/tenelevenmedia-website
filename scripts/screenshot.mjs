@@ -15,6 +15,9 @@
      --stitch             capture one screen at a time and join them. Use it
                           for sites whose animations reverse once scrolled
                           past, which show up as blank gaps otherwise.
+     --reduced-motion     load the site with "reduce motion" turned on. Use it
+                          for sites with pinned sections, which come out blank
+                          in a full-page capture and doubled when stitched.
 
    Saves JPEGs to assets/work/ and writes js/screenshots.js, which the site
    reads automatically. Projects with an explicit `image` keep that image.
@@ -39,6 +42,7 @@ const only = opt("only", null);
 const maxHeight = parseInt(opt("max-height", "4800"), 10);
 const viewportOnly = flag("viewport");
 const stitch = flag("stitch");
+const reducedMotion = flag("reduced-motion");
 
 const slugify = (s) =>
   String(s).toLowerCase().normalize("NFKD").replace(/[^\w\s-]/g, "").trim().replace(/[\s_-]+/g, "-");
@@ -131,7 +135,11 @@ async function writePoster(file, poster) {
 
 await mkdir(path.join(ROOT, "assets/work"), { recursive: true });
 const browser = await chromium.launch();
-const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
+const context = await browser.newContext({
+  viewport: { width: 1440, height: 900 },
+  deviceScaleFactor: 1,
+  reducedMotion: reducedMotion ? "reduce" : "no-preference",
+});
 
 for (const p of projects) {
   const slug = slugify(p.title);

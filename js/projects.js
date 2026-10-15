@@ -36,6 +36,13 @@ window.PROJECTS = [
     accent: "#d6ff3f",
   },
   {
+    title: "Scent and Story",
+    url: "https://scentandstory.co/",
+    category: "Perfume Bar",
+    image: "",
+    accent: "#d9aeb6",
+  },
+  {
     title: "hlix",
     url: "https://hlixlabs.com/",
     category: "Ecommerce",
