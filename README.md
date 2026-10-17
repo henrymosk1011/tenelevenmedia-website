@@ -34,7 +34,9 @@ The site is built to meet WCAG 2.2 level AA, the standard ADA claims are usually
 
 **How it was checked:** axe-core (WCAG 2.0, 2.1 and 2.2 A/AA rules) at every chapter on desktop and phone, in the film and the still page; a contrast check of every visible piece of text against a screenshot of what's behind it; a Tab walk confirming each stop is visible, unobscured and ringed; zoom/reflow at 320px wide, 200% and 400%; and tests of the Motion switch, the remembered setting and the slider. All passed. Automated tools can't cover everything, so before advertising formal compliance have it tested with VoiceOver and NVDA by a person (ideally an outside audit).
 
-When editing: keep new text above 4.5:1 (use `--bone-dim` or brighter for small grey text, `--accent-text` for small orange text), and don't hide content behind `opacity: 0` without checking it with the keyboard.
+**WAVE:** WebAIM's WAVE checks contrast from CSS colours, including text that is hidden at the moment, and it counts an element's own `opacity` against its text. So fades are always put on a wrapper (a chapter, `.panel`, `.step__more`, `.work__intro`), never on the element that directly holds the text. That keeps every piece of text at full contrast whenever it's shown, and WAVE reports 0 contrast errors.
+
+When editing: keep new text above 4.5:1 (use `--bone-dim` or brighter for small grey text, `--accent-text` for small orange text), fade wrappers rather than text elements, and don't hide content behind `opacity: 0` without checking it with the keyboard.
 
 ## Version 1 (`/v1/`, password protected)
 
