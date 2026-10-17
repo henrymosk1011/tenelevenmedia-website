@@ -918,7 +918,7 @@ export function createScene({ canvas, projects, tier = "high" }) {
     // distance at which something `w` wide fills `share` of the width
     const fitW = (w, share) => w / share / (2 * tanH * aspect);
     const fitH = (h, share) => h / share / (2 * tanH);
-    const hero = Math.max(fitH(3.3, 0.5), fitW(3.3, portrait ? 0.86 : 0.4));
+    const hero = Math.max(fitH(3.3, 0.5), fitW(3.3, portrait ? 0.72 : 0.4));
     const stage = portrait ? Math.max(fitW(3.6, 0.8), fitH(3.6, 0.42)) : Math.max(fitH(3.6, 0.62), fitW(3.6, 0.36));
     const dial = portrait ? Math.max(fitW(5.6, 0.74), fitH(5.6, 0.36)) : Math.max(fitH(5.6, 0.78), fitW(5.6, 0.42));
     const screenDist = portrait ? fitW(SW, 0.9) : Math.max(fitH(SH, 0.5), fitW(SW, 0.48));
