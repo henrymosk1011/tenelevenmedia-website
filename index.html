@@ -77,7 +77,7 @@
     <p class="hud__time"><span data-hud-time>00:00</span> / <span data-hud-total>01:11</span></p>
   </div>
 
-  <div class="pointer-label mono" aria-hidden="true">Visit <span>↗</span></div>
+  <div class="pointer-label mono" aria-hidden="true"><span>Visit <i>↗</i></span></div>
 
   <main id="main" tabindex="-1">
     <!-- ============ 0 INTRO ============ -->
@@ -150,8 +150,10 @@
         <div class="work">
           <div class="work__head">
             <p class="label mono"><span class="label__num">(03)</span> Selected work</p>
-            <h2 class="title work__title">Selected <em>work</em> <sup class="mono" data-count></sup></h2>
-            <p class="work__hint mono">Keep scrolling to fly through recent launches</p>
+            <div class="work__intro">
+              <h2 class="title work__title">Selected <em>work</em> <sup class="mono" data-count></sup></h2>
+              <p class="work__hint mono">Keep scrolling to fly through recent launches</p>
+            </div>
           </div>
           <!-- one entry per project, built from js/projects.js -->
           <ol class="work__list" data-work></ol>
@@ -206,10 +208,10 @@
             <p class="label mono"><span class="label__num">(05)</span> Process</p>
             <h2 class="title process__title">From first call to <em>launch.</em></h2>
             <ol class="steps" data-panels="steps">
-              <li class="step"><span class="mono">01</span><div><h3>Discover</h3><p>We dig into your goals, audience and competition to define what success looks like and what makes you different.</p></div></li>
-              <li class="step"><span class="mono">02</span><div><h3>Design</h3><p>Moodboards, wireframes and high fidelity designs, refined together until every pixel feels right.</p></div></li>
-              <li class="step"><span class="mono">03</span><div><h3>Develop</h3><p>Coded by hand, responsive and animated, then tested on every screen size and browser that matters.</p></div></li>
-              <li class="step"><span class="mono">04</span><div><h3><em>Launch</em></h3><p>Secure deployment, SEO and analytics. Your new site is live and ready to make noise.</p></div></li>
+              <li class="step"><span class="mono">01</span><div><h3>Discover</h3><div class="step__more"><p>We dig into your goals, audience and competition to define what success looks like and what makes you different.</p></div></div></li>
+              <li class="step"><span class="mono">02</span><div><h3>Design</h3><div class="step__more"><p>Moodboards, wireframes and high fidelity designs, refined together until every pixel feels right.</p></div></div></li>
+              <li class="step"><span class="mono">03</span><div><h3>Develop</h3><div class="step__more"><p>Coded by hand, responsive and animated, then tested on every screen size and browser that matters.</p></div></div></li>
+              <li class="step"><span class="mono">04</span><div><h3><em>Launch</em></h3><div class="step__more"><p>Secure deployment, SEO and analytics. Your new site is live and ready to make noise.</p></div></div></li>
             </ol>
           </div>
         </div>
