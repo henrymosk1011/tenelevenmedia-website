@@ -1,5 +1,5 @@
 /* ==========================================================================
-   TENELEVENMEDIA /next: the 3D film
+   TENELEVENMEDIA: the 3D film
    --------------------------------------------------------------------------
    One fixed WebGL canvas behind the page. Everything on it is driven by a
    single number, the scene time T, which main.js derives from the scroll
@@ -688,7 +688,7 @@ function coverTexture(p, i, n) {
 /* ==========================================================================
    The scene
    ========================================================================== */
-export function createScene({ canvas, projects, asset, tier = "high" }) {
+export function createScene({ canvas, projects, tier = "high" }) {
   const high = tier === "high";
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: high, alpha: false, powerPreference: "high-performance" });
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
@@ -855,7 +855,7 @@ export function createScene({ canvas, projects, asset, tier = "high" }) {
   screens.forEach((m) => {
     const src = m.userData.project.poster;
     if (!src) return;
-    loader.load(asset(src), (tex) => {
+    loader.load(src, (tex) => {
       tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
       tex.minFilter = THREE.LinearMipmapLinearFilter;
       if (m.userData.fullState !== 2) { m.material.uniforms.uTex.value = tex; m.material.uniforms.uWin.value = 1; m.material.uniforms.uFlipV.value = 0; }
@@ -868,7 +868,7 @@ export function createScene({ canvas, projects, asset, tier = "high" }) {
     const src = ud.project.full;
     if (!canFull || !src || ud.fullState) return;
     ud.fullState = 1;
-    fetch(asset(src))
+    fetch(src)
       .then((r) => (r.ok ? r.blob() : Promise.reject(r.status)))
       .then((b) => createImageBitmap(b).then((probe) => {
         const w = Math.min(1024, probe.width), h = Math.min(maxTex, Math.round((probe.height * w) / probe.width));

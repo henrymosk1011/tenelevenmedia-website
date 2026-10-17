@@ -1,965 +1,559 @@
 /* ==========================================================================
-   TENELEVENMEDIA — interactions & motion
+   TENELEVENMEDIA: page controller
+   Reads the scroll position, turns it into the film's scene time and keeps
+   the text, the timeline HUD and the 3D scene in step. Also decides between
+   the film and the still version of the page (see "Motion" below).
    ========================================================================== */
 
-(() => {
-  const $ = (s, c = document) => c.querySelector(s);
-  const $$ = (s, c = document) => Array.from(c.querySelectorAll(s));
+import { WORK_PAD, workTime, workHalf } from "./timeline.js";
 
-  const SITE = window.SITE || {};
-  const PROJECTS = window.PROJECTS || [];
-  const SHOTS = window.SCREENSHOTS || {};
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const root = document.documentElement;
+const SITE = window.SITE || {};
+const SHOTS = window.SCREENSHOTS || {};
 
-  const root = document.documentElement;
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-  const hasGsap = !!(window.gsap && window.ScrollTrigger);
-  const motion = hasGsap && !reduceMotion;
+// Seconds the film takes when you press Play (and the HUD's running time).
+const DURATION = 71;
+// How quickly the 3D catches up with the scroll position. Higher is snappier;
+// the text is always tied straight to the scrollbar.
+const FOLLOW = 10;
 
-  if (motion) {
-    root.classList.add("motion");
-    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
-    window.scrollTo(0, 0);
-  }
+/* ---------- helpers ---------- */
+const slugify = (s) =>
+  String(s).toLowerCase().normalize("NFKD").replace(/[^\w\s-]/g, "").trim().replace(/[\s_-]+/g, "-");
+const esc = (s) =>
+  String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const pad = (n) => String(n).padStart(2, "0");
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const domainOf = (url) => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url || ""; } };
+const shotFor = (p) => {
+  const s = p.image || SHOTS[slugify(p.title)] || "";
+  return typeof s === "string" ? { poster: s, full: "" } : { poster: s.poster || "", full: s.full || "" };
+};
+const NEW_TAB = '<span class="sr-only"> (opens in a new tab)</span>';
 
-  /* ------------------------------------------------------------------ *
-   * Helpers
-   * ------------------------------------------------------------------ */
-  const slugify = (s) =>
-    String(s).toLowerCase().normalize("NFKD").replace(/[^\w\s-]/g, "").trim().replace(/[\s_-]+/g, "-");
+const projects = (window.PROJECTS || []).map((p) => ({ ...p, slug: slugify(p.title), ...shotFor(p) }));
+const n = projects.length;
 
-  const domainOf = (url) => {
-    try {
-      return new URL(url).hostname.replace(/^www\./, "");
-    } catch {
-      return url || "";
-    }
-  };
+/* ==========================================================================
+   Content
+   ========================================================================== */
+function renderContent() {
+  const email = SITE.email || "";
+  $$("[data-email]").forEach((a) => { a.textContent = email; a.href = `mailto:${email}`; });
+  $$("[data-email-link]").forEach((a) => (a.href = `mailto:${email}?subject=New%20project%20enquiry`));
+  // the big call to action is an email link: say so in its name
+  $$(".contact__cta").forEach((a) => a.setAttribute("aria-label", `Let's make something loud. Email ${email}`));
 
-  const esc = (s) =>
-    String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-
-  const pad = (n) => String(n).padStart(2, "0");
-
-  // A screenshot is a path, or { poster, full } from scripts/screenshot.mjs: the
-  // poster is the top of the page (what a card shows) and full is the whole page.
-  const imageFor = (p) => {
-    const shot = p.image || SHOTS[slugify(p.title)] || "";
-    return typeof shot === "string" ? { poster: shot, full: shot } : shot;
-  };
-
-  // Split a title into "Word *word*" — last word set in italic serif for flair.
-  const flairTitle = (title) => {
-    const parts = esc(title).split(" ");
-    if (parts.length < 2) return parts[0];
-    const last = parts.pop();
-    return `${parts.join(" ")} <em>${last}</em>`;
-  };
-
-  /* ------------------------------------------------------------------ *
-   * Content
-   * ------------------------------------------------------------------ */
-  function renderSite() {
-    const email = SITE.email || "";
-    $$("[data-email]").forEach((a) => {
-      a.textContent = email;
-      a.href = `mailto:${email}`;
-    });
-    $$("[data-email-link]").forEach((a) => (a.href = `mailto:${email}?subject=New%20project%20enquiry`));
-    const socials = SITE.socials || [];
+  const socials = SITE.socials || [];
+  if (socials.length) {
     $$("[data-socials]").forEach((ul) => {
-      ul.innerHTML = socials
-        .map((s) => `<li><a class="link-underline" href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a></li>`)
-        .join("");
-      // With no profiles yet, hide the list and, in the footer, its "Socials" label.
-      (ul.closest(".footer__meta > div") || ul).style.display = socials.length ? "" : "none";
+      ul.innerHTML = socials.map((s) => `<li><a class="link-underline" href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}${NEW_TAB}</a></li>`).join("");
     });
-    $$("[data-year]").forEach((el) => (el.textContent = new Date().getFullYear()));
-    $$("[data-count]").forEach((el) => (el.textContent = `(${pad(PROJECTS.length)})`));
-    $$("[data-total]").forEach((el) => (el.textContent = pad(PROJECTS.length)));
+    $$("[data-socials-wrap]").forEach((el) => (el.hidden = false));
   }
+  $$("[data-year]").forEach((el) => (el.textContent = new Date().getFullYear()));
+  $$("[data-count]").forEach((el) => (el.textContent = `(${pad(n)})`));
 
-  function coverHTML(p) {
-    return `
-      <div class="card__cover">
-        <div class="card__cover-top mono"><span>${esc(p.category || "")}</span><span>${esc(p.year || "")}</span></div>
-        <span class="card__cover-orb"></span>
-        <div class="card__cover-title">${flairTitle(p.title)}</div>
-      </div>`;
+  // projects: captions in the film, cards in the static version
+  $("[data-work]").innerHTML = projects.map((p, i) => `
+    <li class="proj" data-side="${i % 2 ? "right" : "left"}">
+      <a class="proj__link" href="${esc(p.url)}" target="_blank" rel="noopener">
+        ${p.poster ? `<img class="proj__img" src="${esc(p.poster)}" alt="" loading="lazy" decoding="async" width="1440" height="900" />` : ""}
+        <span class="proj__mask"><span class="proj__num mono">${pad(i + 1)} / ${pad(n)}</span></span>
+        <span class="proj__mask"><span class="proj__title">${esc(p.title)}</span></span>
+        <span class="proj__mask"><span class="proj__meta mono">${esc(p.category)}${p.year ? ` · ${esc(p.year)}` : ""}</span></span>
+        <span class="proj__mask"><span class="proj__visit mono">Visit ${esc(domainOf(p.url))} <span aria-hidden="true">↗</span>${NEW_TAB}</span></span>
+      </a>
+    </li>`).join("");
+  $("[data-work-index]").innerHTML = projects.map((p, i) => `<li><button type="button" tabindex="-1" data-project="${i}" title="${esc(p.title)}">${pad(i + 1)}</button></li>`).join("");
+
+  // the studio paragraph lights up word by word; screen readers get it as one sentence
+  $$("[data-words]").forEach((el) => {
+    const sr = document.createElement("span");
+    sr.className = "sr-only";
+    sr.textContent = el.textContent.replace(/\s+/g, " ").trim();
+    const shown = document.createElement("span");
+    shown.setAttribute("aria-hidden", "true");
+    let i = 0;
+    [...el.childNodes].forEach((node) => {
+      if (node.nodeType === 3) {
+        node.textContent.split(/(\s+)/).forEach((part) => {
+          if (!part) return;
+          if (/^\s+$/.test(part)) { shown.append(" "); return; }
+          const s = document.createElement("span"); s.className = "w"; s.textContent = part; s.style.setProperty("--i", i++); shown.append(s);
+        });
+      } else {
+        const s = document.createElement("span"); s.className = "w"; s.append(node.cloneNode(true)); s.style.setProperty("--i", i++); shown.append(s);
+      }
+    });
+    el.textContent = "";
+    el.append(sr, shown);
+    el.style.setProperty("--n", i);
+  });
+
+  // studio clock
+  const clocks = $$("[data-clock]");
+  if (clocks.length) {
+    let fmt;
+    try { fmt = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: SITE.timezone, timeZoneName: "short" }); }
+    catch { fmt = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }); }
+    const tick = () => clocks.forEach((c) => (c.textContent = fmt.format(new Date())));
+    tick();
+    setInterval(tick, 15000);
   }
+}
+renderContent();
 
-  function renderCards() {
-    const wrap = $("[data-cards]");
-    if (!wrap) return;
-    wrap.innerHTML = PROJECTS.map((p, i) => {
-      const { poster, full } = imageFor(p);
-      const media = poster
-        ? `<img src="${esc(poster)}" data-poster="${esc(poster)}" data-full="${esc(full)}" alt="Screenshot of the ${esc(p.title)} website" loading="lazy" decoding="async" />`
-        : coverHTML(p);
-      return `
-        <article class="card" style="--accent:${esc(p.accent || "#ff4d1f")}">
-          <a class="card__link" href="${esc(p.url)}" target="_blank" rel="noopener" data-cursor="Visit ↗">
-            <div class="card__frame">
-              <div class="card__chrome" aria-hidden="true"><i></i><i></i><i></i><span class="card__url mono">${esc(domainOf(p.url))}</span></div>
-              <div class="card__shot"><div class="card__parallax">${media}</div></div>
-            </div>
-            <div class="card__meta">
-              <span class="card__num mono">${pad(i + 1)}</span>
-              <h3 class="card__title">${esc(p.title)}</h3>
-              <span class="card__visit mono">Visit site <b>↗</b></span>
-              <span class="card__cat mono">${[p.category, p.year].filter(Boolean).map(esc).join(" · ")}</span>
-            </div>
-          </a>
-        </article>`;
-    }).join("");
-  }
+/* ==========================================================================
+   Motion
+   The film runs only when the reader wants motion (the Motion switch, or
+   else their system reduce motion setting), the browser has WebGL 2, and the
+   layout fits the screen at the current size and zoom. Otherwise the same
+   content shows as a still page that scrolls normally.
+   ========================================================================== */
+const PREF_KEY = "tm-motion";
+const chapters = $$("[data-chapter]");
+const motionSwitch = $("[data-motion]");
+const status = $("[data-status]");
+const reduceMQ = window.matchMedia("(prefers-reduced-motion: reduce)");
+const hasGL = () => root.dataset.gl === "1";
+const readPref = () => { try { return localStorage.getItem(PREF_KEY); } catch { return null; } };
+const writePref = (v) => { try { localStorage.setItem(PREF_KEY, v); } catch { /* private mode: the switch still works for this visit */ } };
+const wantsMotion = () => { const p = readPref(); return p ? p === "on" : !reduceMQ.matches; };
+const roomy = () => window.innerWidth >= 320 && window.innerHeight >= 500;
+const isFilm = () => root.classList.contains("film");
+const say = (msg) => { status.textContent = ""; setTimeout(() => (status.textContent = msg), 60); };
 
-  function renderIndex() {
-    const list = $("[data-index]");
-    const preview = $("[data-preview]");
-    if (!list) return;
-    // Drop the Year column when no project lists a year.
-    list.closest(".index")?.classList.toggle("index--no-year", !PROJECTS.some((p) => p.year));
-    list.innerHTML = PROJECTS.map(
-      (p, i) => `
-      <li class="index__row" data-fade>
-        <a href="${esc(p.url)}" target="_blank" rel="noopener" data-i="${i}">
-          <span class="mono">${pad(i + 1)}</span>
-          <span class="index__title">${esc(p.title)}</span>
-          <span class="mono index__cat">${esc(p.category || "")}</span>
-          <span class="mono index__year">${esc(p.year || "")}</span>
-          <span class="index__arrow" aria-hidden="true">↗</span>
-        </a>
-      </li>`
-    ).join("");
-    if (preview) {
-      preview.innerHTML = PROJECTS.map((p) => {
-        const { poster } = imageFor(p);
-        return `<div class="index__preview-item" style="--accent:${esc(p.accent || "#ff4d1f")}">${
-          poster ? `<img src="${esc(poster)}" alt="" loading="lazy" decoding="async" />` : coverHTML(p)
-        }</div>`;
-      }).join("");
+$("#work").style.setProperty("--len", String(Math.max(220, 110 + n * 60)));
+
+let film = null; // the running film, created the first time it is needed
+let tooSmallAt = null; // window size at which the film layout last failed to fit
+
+// which chapter is on screen in the still page
+const stillChapter = () => {
+  let k = 0;
+  chapters.forEach((c, i) => { if (c.getBoundingClientRect().top <= window.innerHeight * 0.35) k = i; });
+  return k;
+};
+
+async function setMode(wantFilm, { announce = false } = {}) {
+  if (wantFilm && !isFilm()) {
+    if (!hasGL()) { if (announce) say("Motion isn't available in this browser."); }
+    else if (!roomy()) { tooSmallAt = [window.innerWidth, window.innerHeight]; if (announce) say("Motion needs a larger window or less zoom, so the page stays still."); }
+    else {
+      const k = window.scrollY < 4 ? null : stillChapter();
+      root.classList.replace("static", "film");
+      if (!film) film = await startFilm();
+      if (!film) {
+        root.classList.replace("film", "static");
+        if (announce) say("Motion isn't available in this browser.");
+      } else if (!film.fits()) {
+        tooSmallAt = [window.innerWidth, window.innerHeight];
+        root.classList.replace("film", "static");
+        if (k != null) chapters[k].scrollIntoView({ block: "start" });
+        if (announce) say("Motion needs a larger window or less zoom, so the page stays still.");
+      } else {
+        tooSmallAt = null;
+        film.resume(k);
+        if (announce) say("Motion on.");
+      }
     }
+  } else if (!wantFilm && isFilm()) {
+    const k = film ? film.chapter() : 0;
+    film?.pause();
+    root.classList.replace("film", "static");
+    if (k > 0) chapters[k].scrollIntoView({ block: "start" });
+    if (announce) say("Motion off. The page is now still.");
   }
+  motionSwitch.setAttribute("aria-checked", String(isFilm()));
+}
 
-  /* ------------------------------------------------------------------ *
-   * Text splitting — wraps words (and keeps inline elements like <em>)
-   * ------------------------------------------------------------------ */
-  function splitWords(el, { mask = true } = {}) {
-    const walk = (node) => {
-      Array.from(node.childNodes).forEach((child) => {
-        if (child.nodeType === 3) {
-          const parts = child.textContent.split(/(\s+)/);
-          const frag = document.createDocumentFragment();
-          parts.forEach((part) => {
-            if (!part) return;
-            if (/^\s+$/.test(part)) {
-              frag.appendChild(document.createTextNode(" "));
-              return;
-            }
-            const inner = document.createElement("span");
-            inner.className = "w__i";
-            inner.textContent = part;
-            if (mask) {
-              const outer = document.createElement("span");
-              outer.className = "w";
-              outer.appendChild(inner);
-              frag.appendChild(outer);
-            } else {
-              frag.appendChild(inner);
-            }
-          });
-          child.replaceWith(frag);
-        } else if (child.nodeType === 1 && !child.classList.contains("pill")) {
-          walk(child);
-        }
-      });
-    };
-    walk(el);
-    return $$(".w__i", el);
+motionSwitch.addEventListener("click", () => {
+  const on = !isFilm();
+  writePref(on ? "on" : "off");
+  setMode(on, { announce: true });
+});
+reduceMQ.addEventListener?.("change", () => { if (!readPref()) setMode(wantsMotion()); });
+
+// resizing or zooming: drop to the still page when the film no longer fits,
+// and try the film again once the window is clearly bigger than when it failed
+let resizeTimer = 0;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (isFilm()) {
+      if (!film.fits()) { tooSmallAt = [window.innerWidth, window.innerHeight]; setMode(false); }
+    } else if (hasGL() && wantsMotion() && roomy() && (!tooSmallAt || window.innerWidth > tooSmallAt[0] + 40 || window.innerHeight > tooSmallAt[1] + 40)) {
+      setMode(true);
+    }
+  }, 200);
+});
+
+motionSwitch.setAttribute("aria-checked", String(isFilm()));
+if (!isFilm() && hasGL() && wantsMotion() && !roomy()) tooSmallAt = [window.innerWidth, window.innerHeight];
+if (isFilm()) {
+  (async () => {
+    film = await startFilm();
+    if (!film) { root.classList.replace("film", "static"); motionSwitch.setAttribute("aria-checked", "false"); return; }
+    const check = () => { if (isFilm() && !film.fits()) { tooSmallAt = [window.innerWidth, window.innerHeight]; setMode(false); } };
+    film.resume(null);
+    check();
+    document.fonts?.ready.then(check);
+  })();
+}
+
+/* ==========================================================================
+   The film
+   ========================================================================== */
+async function startFilm() {
+  const coarse = window.matchMedia("(pointer: coarse)").matches;
+  const tier = coarse || window.innerWidth < 760 || (navigator.hardwareConcurrency || 8) <= 4 ? "low" : "high";
+  let scene;
+  try {
+    const { createScene } = await import("./scene.js");
+    scene = createScene({ canvas: $(".stage"), projects, tier });
+  } catch (err) {
+    console.warn("3D scene unavailable, showing the still page instead.", err);
+    root.dataset.gl = "0";
+    return null;
   }
+  $(".stage").addEventListener("webglcontextlost", (e) => {
+    e.preventDefault();
+    root.dataset.gl = "0";
+    setMode(false);
+  });
 
-  function splitChars(el) {
-    const text = el.textContent;
-    el.innerHTML = Array.from(text).map((c) => `<span class="ch">${c === " " ? "&nbsp;" : esc(c)}</span>`).join("");
-    return $$(".ch", el);
+  let running = false, raf = 0;
+
+  /* ---------- measuring ---------- */
+  let tops = [], lens = [], maxScroll = 1;
+  function measure() {
+    const y = window.scrollY;
+    tops = chapters.map((el) => el.getBoundingClientRect().top + y);
+    maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    lens = tops.map((t, k) => Math.max(1, (k < tops.length - 1 ? tops[k + 1] : maxScroll) - t));
+    drawTicks();
   }
-
-  /* Fit the wordmark exactly to the container width */
-  function fitText() {
-    $$("[data-fit]").forEach((el) => {
-      const parent = el.parentElement;
-      el.style.fontSize = "100px";
-      el.style.width = "max-content";
-      const w = el.getBoundingClientRect().width;
-      el.style.width = "";
-      const target = parent.clientWidth;
-      if (w > 0) el.style.fontSize = `${(100 * target) / w}px`;
-    });
-  }
-
-  /* ------------------------------------------------------------------ *
-   * Boot
-   * ------------------------------------------------------------------ */
-  renderSite();
-  renderCards();
-  renderIndex();
-
-  // Fluid backgrounds
-  let heroFluid = null;
-  let footFluid = null;
-  if (window.Fluid) {
-    const heroCanvas = $(".hero__fluid");
-    const footCanvas = $(".footer__fluid");
-    if (heroCanvas) heroFluid = new window.Fluid(heroCanvas, { static: reduceMotion, focus: [0.72, 0.42], spread: 1.05 });
-    if (footCanvas)
-      footFluid = new window.Fluid(footCanvas, {
-        static: reduceMotion,
-        c1: "#6b5bff",
-        c2: "#ff4d1f",
-        focus: [0.5, 0.15],
-        spread: 1.15,
-      });
-  }
-
-  // Clock in the footer
-  startClock();
-
-  if (!hasGsap) {
-    root.classList.remove("intro");
-    fitText();
-    window.addEventListener("resize", fitText);
-    heroFluid?.start();
-    footFluid?.start();
-    return;
-  }
-
-  const { gsap, ScrollTrigger } = window;
-  gsap.registerPlugin(ScrollTrigger);
-  // Don't re-measure when a phone's address bar shows or hides mid-scroll;
-  // that would shift pinned sections while the user is scrolling.
-  ScrollTrigger.config({ ignoreMobileResize: true });
-
-  // Native scrolling (no smooth-scroll library) so the page responds instantly.
-  const scrollToTarget = (target) => {
-    const top = target === 0 ? 0 : target.getBoundingClientRect().top + window.scrollY;
-    window.scrollTo({ top, behavior: reduceMotion ? "auto" : "smooth" });
+  const sceneTime = (y) => {
+    let k = 0;
+    while (k < tops.length - 1 && y >= tops[k + 1]) k++;
+    return k + clamp((y - tops[k]) / lens[k], 0, 1);
+  };
+  const yForTime = (T) => {
+    const k = clamp(Math.floor(T), 0, chapters.length - 1);
+    return clamp(tops[k] + (T - k) * lens[k], 0, maxScroll);
   };
 
-  // anchor links
-  $$('a[href^="#"]').forEach((a) => {
+  // does every chapter's text fit on screen at this size and zoom?
+  const caps = $$(".proj");
+  function fits() {
+    if (!roomy()) return false;
+    const over = (el) => el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 2;
+    if ($$(".hero, .about, .rhythm, .split, .contact").some(over)) return false;
+    const css = getComputedStyle(root);
+    const room = window.innerHeight - parseFloat(css.getPropertyValue("--nav-h")) - parseFloat(css.getPropertyValue("--hud-h"));
+    if (caps.some((c) => c.offsetHeight > room - 16)) return false;
+    const cta = $(".contact__cta").getBoundingClientRect();
+    const row = $(".contact__row").getBoundingClientRect();
+    const label = $(".contact > .label").getBoundingClientRect();
+    return cta.top >= label.bottom && cta.bottom <= row.top - 4 && cta.width <= window.innerWidth;
+  }
+
+  /* ---------- HUD ---------- */
+  const hud = {
+    num: $("[data-hud-num]"), name: $("[data-hud-name]"), time: $("[data-hud-time]"),
+    total: $("[data-hud-total]"), bar: $("[data-hud-bar]"), fill: $("[data-hud-fill]"), seek: $("[data-seek]"),
+  };
+  const fmtTime = (s) => `${pad(Math.floor(s / 60))}:${pad(Math.floor(s % 60))}`;
+  hud.total.textContent = fmtTime(DURATION);
+  function drawTicks() {
+    $$(".hud__tick", hud.bar).forEach((t) => t.remove());
+    tops.slice(1).forEach((t) => {
+      const i = document.createElement("i");
+      i.className = "hud__tick";
+      i.style.left = `${(t / maxScroll) * 100}%`;
+      hud.bar.insertBefore(i, hud.seek);
+    });
+  }
+  const navLinks = $$(".nav__links a");
+
+  /* ---------- scrolling for you: Play, chapter jumps, the timeline ---------- */
+  let auto = null; // { kind: "play" } or { kind: "jump", from, to, t, dur }
+  let playY = 0;
+  const playButtons = $$("[data-play]");
+  const setPlaying = (on) => {
+    playButtons.forEach((b) => {
+      b.dataset.state = on ? "playing" : "paused";
+      if (b.classList.contains("hud__play")) {
+        b.setAttribute("aria-label", on ? "Pause the film" : "Play the film");
+        $(".hud__play-label", b).textContent = on ? "Pause" : "Play";
+      } else {
+        $("span:last-child", b).textContent = on ? "Pause the film" : "Play the film";
+      }
+    });
+  };
+  function play() {
+    if (window.scrollY >= maxScroll - 2) window.scrollTo(0, 0);
+    playY = window.scrollY;
+    auto = { kind: "play" };
+    setPlaying(true);
+  }
+  function stop() {
+    auto = null;
+    setPlaying(false);
+  }
+  playButtons.forEach((b) => b.addEventListener("click", () => (auto?.kind === "play" ? stop() : play())));
+  function jumpTo(y) {
+    const from = window.scrollY, to = clamp(y, 0, maxScroll);
+    const dist = Math.abs(to - from) / maxScroll;
+    auto = { kind: "jump", from, to, t: 0, dur: clamp(0.8 + dist * 2.6, 0.8, 3.2) };
+    setPlaying(false);
+  }
+  // any input from the reader hands control back to them
+  const interrupt = () => { if (auto) stop(); };
+  window.addEventListener("wheel", interrupt, { passive: true });
+  window.addEventListener("touchstart", interrupt, { passive: true });
+  window.addEventListener("keydown", (e) => {
+    if (["ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End", " "].includes(e.key) && e.target === document.body) interrupt();
+  });
+
+  // the timeline is a range input: drag it, click it, or use the arrow keys
+  let seeking = false, lastSeek = -1, lastSeekText = "";
+  hud.seek.addEventListener("pointerdown", () => (seeking = true));
+  window.addEventListener("pointerup", () => (seeking = false));
+  hud.seek.addEventListener("input", () => {
+    stop();
+    window.scrollTo(0, (hud.seek.value / 1000) * maxScroll);
+  });
+
+  // where each chapter lands when you jump to it (progress within the chapter)
+  const LAND = { top: 0, about: 0.5, rhythm: 0.5, work: 0.035, services: 0.1, process: 0.12, contact: 1 };
+  const landY = (k) => yForTime(k + (LAND[chapters[k].id] ?? 0.1));
+  $$("[data-jump]").forEach((a) => {
     a.addEventListener("click", (e) => {
-      const id = a.getAttribute("href");
-      if (id.length < 2 && id !== "#") return;
-      const target = id === "#top" || id === "#" ? 0 : $(id);
-      if (target === null) return;
+      if (!running) return; // the still page just follows the link
+      const id = (a.getAttribute("href") || "").slice(1);
+      const k = chapters.findIndex((c) => c.id === id);
+      if (k < 0) return;
       e.preventDefault();
-      closeMenu();
-      scrollToTarget(target);
+      jumpTo(landY(k));
+      history.replaceState(null, "", id === "top" ? location.pathname : `#${id}`);
     });
   });
-
-  /* ------------------------------------------------------------------ *
-   * Split text set-up
-   * ------------------------------------------------------------------ */
-  const wordmarkChars = splitChars($(".wordmark"));
-  const ledeWords = splitWords($(".hero__lede"));
-  $$("[data-split]").forEach((el) => {
-    if (el.classList.contains("hero__lede")) return;
-    el._words = splitWords(el);
-  });
-  const scrubWords = $("[data-scrub-words]") ? splitWords($("[data-scrub-words]"), { mask: false }) : [];
-
-  /* ------------------------------------------------------------------ *
-   * Fonts → fit → animations
-   * ------------------------------------------------------------------ */
-  // wait for webfonts (so text measures correctly), but never longer than 2.5s
-  const fontsReady = Promise.race([
-    document.fonts ? document.fonts.ready : Promise.resolve(),
-    new Promise((r) => setTimeout(r, 2500)),
-  ]);
-  fontsReady.then(() => {
-    fitText();
-    window.addEventListener("resize", () => {
-      fitText();
-    });
-    init();
+  const workIndex = $("[data-work-index]");
+  const projectY = (i) => yForTime(3 + workTime(i, n));
+  workIndex.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-project]");
+    if (b) jumpTo(projectY(+b.dataset.project));
   });
 
-  function init() {
-    if (!motion) {
-      staticDial();
-      heroFluid?.start();
-      footFluid?.start();
-      setupCursor();
-      setupMenu();
-      return;
+  // keyboard: when focus lands on something that is faded out (another
+  // chapter, another project), bring its chapter on screen
+  const shown = (el) => {
+    let a = 1;
+    for (let e = el; e && e !== root; e = e.parentElement) a *= parseFloat(getComputedStyle(e).opacity);
+    return a > 0.95;
+  };
+  document.addEventListener("focusin", (e) => {
+    if (!running) return;
+    const el = e.target;
+    const sec = el.closest?.("[data-chapter]");
+    if (!sec || shown(el)) return;
+    stop();
+    const proj = el.closest(".proj");
+    window.scrollTo(0, proj ? projectY(caps.indexOf(proj)) : landY(chapters.indexOf(sec)));
+    // cut straight there (no catch up) so the focused text shows at once
+    Ts = sceneTime(window.scrollY);
+    updateUI(Ts);
+  });
+
+  /* ---------- pointer ---------- */
+  const label = $(".pointer-label");
+  const finePointer = window.matchMedia("(pointer: fine)").matches;
+  let px = -1, py = -1, overScreen = -1;
+  window.addEventListener("pointermove", (e) => {
+    if (!running) return;
+    px = e.clientX; py = e.clientY;
+    scene.setPointer((px / window.innerWidth) * 2 - 1, -((py / window.innerHeight) * 2 - 1));
+    if (finePointer) { label.style.setProperty("--x", `${px}px`); label.style.setProperty("--y", `${py}px`); }
+  }, { passive: true });
+  window.addEventListener("click", (e) => {
+    if (!running || overScreen < 0 || e.target.closest("a, button, input")) return;
+    window.open(projects[overScreen].url, "_blank", "noopener");
+  });
+
+  /* ---------- per-chapter UI ---------- */
+  const indexBtns = $$("button", workIndex);
+  const services = $$('[data-panels="services"] .panel');
+  const dots = $$(".dots i");
+  const steps = $$('[data-panels="steps"] .step');
+  const dialLabel = $(".dial-label");
+  const dialNum = $("[data-dial-num]"), dialPct = $("[data-dial-pct]");
+  const state = { proj: -2, service: -2, step: -2, chapter: -1, pct: -1 };
+  const setActive = (list, i) => list.forEach((el, k) => el.classList.toggle("is-active", k === i));
+
+  function updateUI(T) {
+    // work
+    const pw = T - 3;
+    let proj = -1;
+    if (n && pw > 0 && pw < 1) {
+      const i = clamp(Math.round(((pw - WORK_PAD) / (1 - 2 * WORK_PAD)) * n - 0.5), 0, n - 1);
+      if (Math.abs(pw - workTime(i, n)) < workHalf(n) * 0.92) proj = i;
+    }
+    if (proj !== state.proj) {
+      state.proj = proj;
+      setActive(caps, proj);
+      setActive(indexBtns, proj);
+    }
+    // services
+    const q = T - 4;
+    const service = q > 0.015 && q < 0.985 ? clamp(Math.floor(q * 4), 0, 3) : -1;
+    if (service !== state.service) {
+      state.service = service;
+      setActive(services, service);
+      setActive(dots, service);
+    }
+    // process
+    const fill = clamp((T - 5 - 0.06) / 0.84, 0, 1);
+    const step = T > 5 && T < 6 ? Math.min(3, Math.floor(fill * 4)) : -1;
+    if (step !== state.step) {
+      state.step = step;
+      steps.forEach((el, k) => {
+        el.classList.toggle("is-active", k === step);
+        el.classList.toggle("is-done", step > -1 && k < step);
+        if (k === step) el.setAttribute("aria-current", "step");
+        else el.removeAttribute("aria-current");
+      });
+      dialNum.textContent = pad(Math.max(0, step) + 1);
+    }
+    if (T > 4.9 && T < 6.1) {
+      const pct = Math.round(fill * 100);
+      if (pct !== state.pct) { state.pct = pct; dialPct.textContent = pct >= 100 ? "Live" : `${pct}%`; }
+      const s = scene.projectStage();
+      dialLabel.style.setProperty("--dx", `${s.x.toFixed(1)}px`);
+      dialLabel.style.setProperty("--dy", `${s.y.toFixed(1)}px`);
+    }
+  }
+
+  /* ---------- the loop ---------- */
+  const lastP = chapters.map(() => -1);
+  let last = performance.now(), time = 0;
+  let Ts = 0, lastY = 0, vel = 0;
+  // adaptive resolution: if frames are slow, render fewer pixels
+  let slowFrames = 0, frames = 0, cooldown = 2.5;
+
+  function frame(now) {
+    if (!running) return;
+    const dt = Math.min(0.1, Math.max(0.001, (now - last) / 1000));
+    last = now;
+    time += dt;
+
+    if (auto?.kind === "play") {
+      playY += (maxScroll / DURATION) * dt;
+      window.scrollTo(0, playY);
+      if (playY >= maxScroll) stop();
+    } else if (auto?.kind === "jump") {
+      auto.t = Math.min(1, auto.t + dt / auto.dur);
+      const e = auto.t < 0.5 ? 4 * auto.t ** 3 : 1 - (-2 * auto.t + 2) ** 3 / 2;
+      window.scrollTo(0, auto.from + (auto.to - auto.from) * e);
+      if (auto.t >= 1) auto = null;
     }
 
-    heroFluid?.start();
-    heroIntro();
+    const y = window.scrollY;
+    const T = sceneTime(y);
 
-    heroScroll();
-    reveals();
-    manifesto();
-    marquees();
-    horizontalWork();
-    stackCards();
-    bigType();
-    processDial();
-    indexPreview();
-    footer();
-    setupCursor();
-    setupMagnetic();
-    setupMenu();
-    navOnScroll();
-
-    ScrollTrigger.refresh();
-  }
-
-  /* ------------------------------------------------------------------ *
-   * Hero entrance
-   * ------------------------------------------------------------------ */
-  function heroIntro() {
-    const tl = gsap.timeline({ delay: 0.1 });
-    tl.from(wordmarkChars, {
-      yPercent: 110,
-      rotate: 8,
-      duration: 1.3,
-      ease: "expo.out",
-      stagger: 0.045,
-      onComplete: () => gsap.set(".wordmark", { overflow: "visible" }),
-    })
-      .from(".hero__title .line > span", { yPercent: 110, duration: 1.2, ease: "expo.out", stagger: 0.1 }, 0.15)
-      .from(ledeWords, { yPercent: 110, duration: 1, ease: "expo.out", stagger: 0.015 }, 0.3)
-      .to(".hero [data-reveal]", { opacity: 1, duration: 1, stagger: 0.08 }, 0.5)
-      .from(".badge", { scale: 0, rotate: -180, duration: 1.4, ease: "expo.out" }, 0.4)
-      .from(".nav > *", { y: -30, opacity: 0, duration: 1, ease: "expo.out", stagger: 0.08 }, 0.3);
-    // everything now starts from its hidden state, so the page can be shown
-    root.classList.remove("intro");
-    return tl;
-  }
-
-  /* ------------------------------------------------------------------ *
-   * Hero — pinned while the next section slides over it
-   * ------------------------------------------------------------------ */
-  function heroScroll() {
-    const hero = $(".hero");
-    ScrollTrigger.create({
-      trigger: hero,
-      start: "top top",
-      end: "bottom top",
-      pin: true,
-      pinSpacing: false,
-      onLeave: () => heroFluid?.stop(),
-      onEnterBack: () => heroFluid?.start(),
-    });
-
-    gsap.to(".hero__inner", {
-      scale: 0.92,
-      opacity: 0.25,
-      ease: "none",
-      scrollTrigger: { trigger: hero, start: "top top", end: "bottom top", scrub: true },
-    });
-    gsap.to(wordmarkChars, {
-      y: (i, el) => (i % 2 ? -0.4 : 0.3) * (1 + (i % 3) * 0.4) * el.offsetHeight,
-      ease: "none",
-      scrollTrigger: { trigger: hero, start: "top top", end: "bottom top", scrub: true, invalidateOnRefresh: true },
-    });
-    gsap.to(".hero__title", {
-      y: () => -window.innerHeight * 0.12,
-      ease: "none",
-      scrollTrigger: { trigger: hero, start: "top top", end: "bottom top", scrub: true, invalidateOnRefresh: true },
-    });
-
-    // fluid reacts while pointer is over the hero
-    hero.addEventListener("pointerenter", () => heroFluid?.setHover(1));
-    hero.addEventListener("pointerleave", () => heroFluid?.setHover(0));
-  }
-
-  /* ------------------------------------------------------------------ *
-   * Generic reveals
-   * ------------------------------------------------------------------ */
-  function reveals() {
-    $$("[data-split]").forEach((el) => {
-      if (!el._words) return;
-      gsap.from(el._words, {
-        yPercent: 110,
-        duration: 1.1,
-        ease: "expo.out",
-        stagger: 0.04,
-        scrollTrigger: { trigger: el, start: "top 85%" },
-      });
-    });
-
-    ScrollTrigger.batch("[data-fade]", {
-      start: "top 90%",
-      onEnter: (els) => gsap.to(els, { opacity: 1, y: 0, duration: 1.2, ease: "expo.out", stagger: 0.08, overwrite: true }),
-    });
-
-    $$(".label").forEach((el) => {
-      if (el.closest(".hero, .footer")) return;
-      gsap.from(el, { opacity: 0, x: -20, duration: 1, ease: "expo.out", scrollTrigger: { trigger: el, start: "top 90%" } });
-    });
-  }
-
-  /* ------------------------------------------------------------------ *
-   * Manifesto — words light up as you scroll
-   * ------------------------------------------------------------------ */
-  function manifesto() {
-    const el = $("[data-scrub-words]");
-    if (!el) return;
-    gsap.set(scrubWords, { opacity: 0.14 });
-    const tl = gsap.timeline({
-      scrollTrigger: { trigger: el, start: "top 80%", end: "bottom 45%", scrub: true },
-    });
-    tl.to(scrubWords, { opacity: 1, ease: "none", stagger: 0.1, duration: 0.6 }, 0);
-    $$(".pill", el).forEach((pill) => {
-      gsap.from(pill, {
-        scaleX: 0,
-        transformOrigin: "left center",
-        ease: "none",
-        scrollTrigger: { trigger: pill, start: "top 85%", end: "top 55%", scrub: true },
-      });
-    });
-  }
-
-  /* ------------------------------------------------------------------ *
-   * Marquee — infinite loop that speeds up & reverses with scroll
-   * ------------------------------------------------------------------ */
-  function marquees() {
-    // page scroll speed (px per frame) and direction, decaying to 0 when scrolling stops
-    let scrollV = 0;
-    let lastScroll = 0;
-    ScrollTrigger.create({
-      start: 0,
-      end: "max",
-      onUpdate: (self) => {
-        scrollV = self.getVelocity() / 60;
-        lastScroll = performance.now();
-      },
-    });
-
-    $$("[data-marquee]").forEach((m) => {
-      const base = parseFloat(m.dataset.marquee) || 1;
-      const inner = $(".marquee__inner", m);
-      // fill so that we have at least 2x viewport width
-      const original = inner.innerHTML;
-      let guard = 0;
-      while (inner.scrollWidth < window.innerWidth * 2.2 && guard++ < 10) inner.innerHTML += original;
-      inner.innerHTML += inner.innerHTML;
-      const half = () => inner.scrollWidth / 2;
-
-      let x = 0;
-      let dir = 1;
-      let boost = 0;
-      const speed = 0.9; // px per frame @60fps
-
-      let visible = false;
-      ScrollTrigger.create({ trigger: m, start: "top bottom", end: "bottom top", onToggle: (s) => (visible = s.isActive) });
-
-      gsap.ticker.add((time, delta) => {
-        if (!visible) return;
-        const v = performance.now() - lastScroll < 120 ? scrollV : 0;
-        if (v > 0.1) dir = 1;
-        else if (v < -0.1) dir = -1;
-        boost += (Math.min(Math.abs(v), 60) * 0.35 - boost) * 0.1;
-        x -= (speed + boost) * dir * base * (delta / 16.67);
-        const w = half();
-        if (x <= -w) x += w;
-        if (x > 0) x -= w;
-        inner.style.transform = `translate3d(${x}px,0,0)`;
-      });
-    });
-  }
-
-  /* ------------------------------------------------------------------ *
-   * Selected work — pinned horizontal scroll
-   * ------------------------------------------------------------------ */
-  function horizontalWork() {
-    const section = $(".work");
-    const track = $(".work__track");
-    if (!section || !track) return;
-    const cards = $$(".card", track);
-    section.classList.add("is-pinned");
-
-    const distance = () => track.scrollWidth - window.innerWidth;
-    const progressBar = $(".work__progress i");
-
-    // Cards sliding under a still cursor would keep starting their hover effects
-    // (the shadow glow and the screenshot scroll), which are costly to repaint
-    // every frame. Ignore the pointer while the track moves.
-    let hoverTimer;
-    function pauseHover() {
-      section.classList.add("is-scrolling");
-      clearTimeout(hoverTimer);
-      hoverTimer = setTimeout(() => section.classList.remove("is-scrolling"), 150);
+    // text: progress through each chapter, straight from the scrollbar
+    for (let k = 0; k < chapters.length; k++) {
+      const p = clamp((y - tops[k]) / lens[k], 0, 1);
+      if (Math.abs(p - lastP[k]) > 0.0002) { chapters[k].style.setProperty("--p", p.toFixed(4)); lastP[k] = p; }
     }
 
-    // Cards lean with the speed of the track itself. The track glides between
-    // mouse wheel notches, so the lean stays steady instead of springing back
-    // toward zero after every notch; it settles once the track has stopped.
-    const skewSetters = cards.map((c) => gsap.quickTo(c, "skewX", { duration: 0.6, ease: "power3.out" }));
-    let lastX = 0;
-    let lastT = 0;
-    let skewTimer;
-    function skewWithTrack() {
-      const x = gsap.getProperty(track, "x");
-      const t = performance.now();
-      const v = lastT ? (x - lastX) / Math.max(t - lastT, 1) : 0; // px per ms
-      lastX = x;
-      lastT = t;
-      skewSetters.forEach((set) => set(gsap.utils.clamp(-7, 7, v * 2.5)));
-      clearTimeout(skewTimer);
-      skewTimer = setTimeout(() => {
-        lastT = 0;
-        skewSetters.forEach((set) => set(0));
-      }, 100);
+    // 3D: follows the scroll position with a short, smooth catch up
+    Ts += (T - Ts) * (1 - Math.exp(-dt * FOLLOW));
+    if (Math.abs(T - Ts) < 1e-5) Ts = T;
+    const v = (y - lastY) / dt / window.innerHeight;
+    lastY = y;
+    vel += (v - vel) * (1 - Math.exp(-dt * 6));
+
+    if (finePointer && px >= 0 && Ts > 2.9 && Ts < 4.1) {
+      const hit = scene.pick(px, py);
+      if (hit !== overScreen) { overScreen = hit; root.classList.toggle("is-over-screen", hit >= 0); }
+    } else if (overScreen !== -1) {
+      overScreen = -1;
+      scene.pick(-9999, -9999);
+      root.classList.remove("is-over-screen");
     }
 
-    const tween = gsap.to(track, {
-      x: () => -distance(),
-      ease: "none",
-      // runs every frame the track moves, including while it glides to a stop
-      onUpdate() {
-        if (progressBar) gsap.set(progressBar, { scaleX: this.progress() });
-        skewWithTrack();
-        if (finePointer) pauseHover();
-      },
-      scrollTrigger: {
-        trigger: section,
-        start: "top top",
-        end: () => `+=${distance()}`,
-        pin: ".work__pin",
-        // glide to the scroll position, so mouse wheel notches and fast flicks
-        // move the track smoothly instead of in jumps
-        scrub: 0.8,
-        invalidateOnRefresh: true,
-        anticipatePin: 1,
-      },
-    });
+    scene.update(Ts, time, dt, vel);
+    updateUI(Ts);
 
-    // title reveal
-    gsap.from(".work__title .line > span", {
-      yPercent: 110,
-      duration: 1.2,
-      ease: "expo.out",
-      stagger: 0.1,
-      scrollTrigger: { trigger: section, start: "top 70%" },
-    });
+    // HUD
+    const k = clamp(Math.floor(T), 0, chapters.length - 1);
+    if (k !== state.chapter) {
+      chapters[state.chapter]?.classList.remove("is-current");
+      chapters[k].classList.add("is-current");
+      state.chapter = k;
+      hud.num.textContent = pad(k);
+      hud.name.textContent = chapters[k].dataset.chapter;
+      navLinks.forEach((a) => a.classList.toggle("is-current", a.getAttribute("href") === `#${chapters[k].id}`));
+    }
+    const prog = y / maxScroll;
+    hud.fill.style.setProperty("--progress", prog.toFixed(4));
+    const t = fmtTime(prog * DURATION);
+    hud.time.textContent = t;
+    if (!seeking) {
+      const sv = Math.round(prog * 1000);
+      if (sv !== lastSeek) { hud.seek.value = sv; lastSeek = sv; }
+    }
+    const seekText = `${chapters[k].dataset.chapter}, ${t} of ${fmtTime(DURATION)}`;
+    if (seekText !== lastSeekText) { hud.seek.setAttribute("aria-valuetext", seekText); lastSeekText = seekText; }
 
-    const current = $("[data-current]");
-    cards.forEach((card, i) => {
-      // parallax inside each frame
-      const par = $(".card__parallax", card);
-      gsap.fromTo(
-        par,
-        { xPercent: -2.5 },
-        {
-          xPercent: 2.5,
-          ease: "none",
-          scrollTrigger: { trigger: card, containerAnimation: tween, start: "left right", end: "right left", scrub: true },
-        }
-      );
-      // entrance
-      gsap.from(card, {
-        rotate: 4,
-        yPercent: 8,
-        scale: 0.92,
-        opacity: 0.3,
-        ease: "power2.out",
-        scrollTrigger: { trigger: card, containerAnimation: tween, start: "left 100%", end: "left 45%", scrub: true },
-      });
-      gsap.from($(".card__meta", card).children, {
-        y: 30,
-        opacity: 0,
-        duration: 0.9,
-        ease: "expo.out",
-        stagger: 0.06,
-        scrollTrigger: { trigger: card, containerAnimation: tween, start: "left 75%" },
-      });
-      // active counter
-      ScrollTrigger.create({
-        trigger: card,
-        containerAnimation: tween,
-        start: "left 55%",
-        end: "right 55%",
-        onToggle: (self) => {
-          if (self.isActive && current) current.textContent = pad(i + 1);
-        },
-      });
-
-      // On hover the full-page screenshot scrolls inside the frame. Cards show
-      // the light poster image; the full one is decoded only while hovered,
-      // which keeps the gallery from decoding six huge images as it scrolls.
-      const img = $("img", card);
-      const shot = $(".card__shot", card);
-      if (img && shot) {
-        const link = $(".card__link", card);
-        const { poster, full } = img.dataset;
-        let hovered = false;
-        link.addEventListener("mouseenter", async () => {
-          hovered = true;
-          if (full !== poster && img.getAttribute("src") !== full) {
-            const pre = new Image();
-            pre.src = full;
-            try {
-              await pre.decode();
-            } catch {
-              return;
-            }
-            if (!hovered) return;
-            img.src = full; // same top of page as the poster, so the swap is invisible
-            if (!img.complete) await new Promise((r) => img.addEventListener("load", r, { once: true }));
-            if (!hovered) return;
-          }
-          const overflow = img.offsetHeight - shot.offsetHeight;
-          if (overflow > 20) gsap.to(img, { y: -overflow, duration: Math.min(8, overflow / 300), ease: "power1.inOut", overwrite: true });
-        });
-        link.addEventListener("mouseleave", () => {
-          hovered = false;
-          gsap.to(img, {
-            y: 0,
-            duration: 1.2,
-            ease: "expo.out",
-            overwrite: true,
-            onComplete: () => {
-              if (!hovered && img.getAttribute("src") !== poster) img.src = poster;
-            },
-          });
-        });
+    // adaptive resolution
+    cooldown -= dt;
+    if (cooldown < 0) {
+      frames++;
+      if (dt > 1 / 38) slowFrames++;
+      if (frames >= 90) {
+        if (slowFrames > 45 && scene.dpr > 1) { scene.setDpr(Math.max(1, scene.dpr - 0.25)); cooldown = 3; }
+        frames = slowFrames = 0;
       }
-    });
-
-    // outro text
-    gsap.from(".work__outro-link > span", {
-      yPercent: 60,
-      opacity: 0,
-      ease: "power2.out",
-      stagger: 0.1,
-      scrollTrigger: { trigger: ".work__outro", containerAnimation: tween, start: "left 95%", end: "left 50%", scrub: true },
-    });
-  }
-
-  /* ------------------------------------------------------------------ *
-   * Services — sticky stacking cards
-   * ------------------------------------------------------------------ */
-  function stackCards() {
-    const cards = $$(".stack__card");
-    cards.forEach((card, i) => {
-      card.style.setProperty("--i", i);
-      const title = $(".stack__title", card);
-      gsap.from(title, {
-        yPercent: 40,
-        opacity: 0,
-        duration: 1.2,
-        ease: "expo.out",
-        scrollTrigger: { trigger: card, start: "top 70%" },
-      });
-      gsap.from($$(".tags li", card), {
-        y: 20,
-        opacity: 0,
-        duration: 0.8,
-        ease: "expo.out",
-        stagger: 0.05,
-        scrollTrigger: { trigger: card, start: "top 50%" },
-      });
-
-      const next = cards[i + 1];
-      if (!next) return;
-      gsap.to(card, {
-        scale: 0.9 + i * 0.015,
-        "--dim": 0.55,
-        rotateX: -6,
-        ease: "none",
-        scrollTrigger: {
-          trigger: next,
-          start: "top bottom",
-          end: () => `top ${parseFloat(getComputedStyle(next).top) || 0}px`,
-          scrub: true,
-          invalidateOnRefresh: true,
-        },
-      });
-    });
-    gsap.set(".stack", { perspective: 1200 });
-  }
-
-  /* ------------------------------------------------------------------ *
-   * Big type — rows slide in opposite directions
-   * ------------------------------------------------------------------ */
-  function bigType() {
-    $$(".bigtype__row").forEach((row) => {
-      const dir = parseFloat(row.dataset.dir) || -1;
-      const amount = () => Math.max(0, row.scrollWidth - window.innerWidth) * 0.6 + window.innerWidth * 0.1;
-      gsap.fromTo(
-        row,
-        { x: () => (dir < 0 ? 0 : -amount()) },
-        {
-          x: () => (dir < 0 ? -amount() : 0),
-          ease: "none",
-          scrollTrigger: { trigger: ".bigtype", start: "top bottom", end: "bottom top", scrub: true, invalidateOnRefresh: true },
-        }
-      );
-    });
-  }
-
-  /* ------------------------------------------------------------------ *
-   * Process — the clock winds to 10:11 as you scroll the steps
-   * ------------------------------------------------------------------ */
-  // Static dial (no scroll animation): show it complete
-  function staticDial() {
-    $(".dial__progress")?.style.setProperty("stroke-dashoffset", "0");
-    $$(".dial__nodes circle").forEach((n) => n.classList.add("is-on"));
-    const track = $(".dial__count-track");
-    if (track) track.style.transform = "translateY(-75%)";
-    const status = $(".dial__status");
-    if (status) {
-      status.textContent = "Live";
-      status.classList.add("is-live");
     }
+
+    raf = requestAnimationFrame(frame);
   }
 
-  function processDial() {
-    const section = $(".process");
-    if (!section) return;
-    const steps = $$(".step", section);
-    const nodes = $$(".dial__nodes circle", section);
-    const track = $(".dial__count-track", section);
-    const status = $(".dial__status", section);
+  window.addEventListener("resize", () => { if (running) { measure(); scene.resize(); } });
+  document.fonts?.ready.then(() => running && measure());
+  new ResizeObserver(() => running && measure()).observe(document.body);
 
-    section.classList.add("is-pinned");
-    gsap.set(steps, { opacity: 0, y: 60 });
-    gsap.set(steps[0], { opacity: 1, y: 0 });
-
-    const state = { p: 0 };
-    const tl = gsap.timeline({
-      defaults: { ease: "none" },
-      scrollTrigger: {
-        trigger: section,
-        start: "top top",
-        end: () => `+=${window.innerHeight * 3}`,
-        pin: ".process__pin",
-        scrub: true,
-        invalidateOnRefresh: true,
-      },
-    });
-
-    const dur = steps.length; // one unit per step
-    tl.to(state, {
-      p: 1,
-      duration: dur,
-      onUpdate: () => {
-        const pct = Math.round(state.p * 100);
-        status.textContent = pct >= 100 ? "Live" : `${pct}%`;
-        status.classList.toggle("is-live", pct >= 100);
-        nodes.forEach((n, i) => n.classList.toggle("is-on", state.p >= i / nodes.length));
-      },
-    }, 0);
-    tl.to(".dial__progress", { strokeDashoffset: 0, duration: dur }, 0);
-    tl.to(".dial__text", { rotation: -270, svgOrigin: "200 200", duration: dur }, 0);
-    tl.to(".dial__inner", { rotation: 180, svgOrigin: "200 200", duration: dur }, 0);
-
-    steps.forEach((step, i) => {
-      if (i > 0) {
-        tl.to(step, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, i - 0.1);
-        tl.to(track, { yPercent: (-100 * i) / steps.length, duration: 0.35, ease: "power3.inOut" }, i - 0.15);
-      }
-      if (i < steps.length - 1) tl.to(step, { opacity: 0, y: -60, duration: 0.35, ease: "power2.in" }, i + 0.6);
-    });
-  }
-
-  /* ------------------------------------------------------------------ *
-   * Index — floating preview follows the cursor
-   * ------------------------------------------------------------------ */
-  function indexPreview() {
-    const box = $(".index__preview");
-    const track = $("[data-preview]");
-    const list = $("[data-index]");
-    if (!box || !track || !list || !finePointer) return;
-
-    const xTo = gsap.quickTo(box, "x", { duration: 0.12, ease: "power2.out" });
-    const yTo = gsap.quickTo(box, "y", { duration: 0.12, ease: "power2.out" });
-    const rTo = gsap.quickTo(box, "rotation", { duration: 0.5, ease: "power3.out" });
-    let lastX = 0;
-
-    window.addEventListener("pointermove", (e) => {
-      xTo(e.clientX);
-      yTo(e.clientY);
-      rTo(gsap.utils.clamp(-12, 12, (e.clientX - lastX) * 0.6));
-      lastX = e.clientX;
-    });
-
-    list.addEventListener("pointerover", (e) => {
-      const a = e.target.closest("a[data-i]");
-      if (!a) return;
-      const i = +a.dataset.i;
-      gsap.to(track, { yPercent: -100 * i, duration: 0.7, ease: "expo.out" });
-    });
-    list.addEventListener("pointerenter", () => gsap.to(box, { scale: 1, duration: 0.6, ease: "expo.out" }));
-    list.addEventListener("pointerleave", () => gsap.to(box, { scale: 0, duration: 0.5, ease: "expo.out" }));
-  }
-
-  /* ------------------------------------------------------------------ *
-   * Footer
-   * ------------------------------------------------------------------ */
-  function footer() {
-    const foot = $(".footer");
-    ScrollTrigger.create({
-      trigger: foot,
-      start: "top bottom",
-      end: "bottom top",
-      onToggle: (s) => (s.isActive ? footFluid?.start() : footFluid?.stop()),
-    });
-    gsap.from(".footer__cta-line", {
-      yPercent: 50,
-      opacity: 0,
-      ease: "none",
-      stagger: 0.1,
-      scrollTrigger: { trigger: foot, start: "top 80%", end: "top 10%", scrub: true },
-    });
-    gsap.from(".btn-round", {
-      scale: 0,
-      rotate: -90,
-      ease: "none",
-      scrollTrigger: { trigger: foot, start: "top 50%", end: "top 0%", scrub: true },
-    });
-  }
-
-  function startClock() {
-    const el = $("[data-clock]");
-    if (!el) return;
-    let fmt;
-    try {
-      fmt = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: SITE.timezone, timeZoneName: "short" });
-    } catch {
-      fmt = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZoneName: "short" });
-    }
-    const tick = () => {
-      const parts = fmt.formatToParts(new Date());
-      const get = (t) => parts.find((p) => p.type === t)?.value || "";
-      el.textContent = `${get("hour")}:${get("minute")} ${get("dayPeriod")} ${get("timeZoneName")}`;
-    };
-    tick();
-    setInterval(tick, 10000);
-  }
-
-  /* ------------------------------------------------------------------ *
-   * Cursor
-   * ------------------------------------------------------------------ */
-  function setupCursor() {
-    const cursor = $(".cursor");
-    if (!cursor || !finePointer) return;
-    root.classList.add("has-cursor");
-    const ring = $(".cursor__ring", cursor);
-    const label = $(".cursor__label", cursor);
-
-    // positioned directly on every pointer event: no easing, no trailing
-    window.addEventListener("pointermove", (e) => {
-      ring.style.translate = `${e.clientX}px ${e.clientY}px`;
-    }, { passive: true });
-
-    document.addEventListener("pointerover", (e) => {
-      const labelled = e.target.closest("[data-cursor]");
-      cursor.classList.toggle("is-label", !!labelled);
-      if (labelled) label.textContent = labelled.dataset.cursor;
-    });
-    document.addEventListener("pointerleave", () => cursor.classList.remove("is-label"));
-  }
-
-  /* ------------------------------------------------------------------ *
-   * Magnetic buttons
-   * ------------------------------------------------------------------ */
-  function setupMagnetic() {
-    if (!finePointer) return;
-    $$("[data-magnetic]").forEach((el) => {
-      const xTo = gsap.quickTo(el, "x", { duration: 0.8, ease: "elastic.out(1, 0.4)" });
-      const yTo = gsap.quickTo(el, "y", { duration: 0.8, ease: "elastic.out(1, 0.4)" });
-      el.addEventListener("pointermove", (e) => {
-        const r = el.getBoundingClientRect();
-        xTo((e.clientX - (r.left + r.width / 2)) * 0.35);
-        yTo((e.clientY - (r.top + r.height / 2)) * 0.35);
-      });
-      el.addEventListener("pointerleave", () => {
-        xTo(0);
-        yTo(0);
-      });
-    });
-  }
-
-  /* ------------------------------------------------------------------ *
-   * Menu
-   * ------------------------------------------------------------------ */
-  let menuOpen = false;
-  let menuTl = null;
-  let menuCircle = null;
-  function setupMenu() {
-    const btn = $(".nav__menu");
-    const menu = $(".menu");
-    if (!btn || !menu) return;
-
-    const fast = reduceMotion ? 0.01 : 1;
-    menuCircle = (r) => {
-      const b = btn.getBoundingClientRect();
-      return `circle(${r}px at ${b.right - 22}px ${b.top + b.height / 2}px)`;
-    };
-
-    // link + footer reveal (the circular wipe is tweened separately so it
-    // always starts from the button's current position)
-    menuTl = gsap
-      .timeline({ paused: true })
-      .from(".menu__links a > *", { yPercent: 110, duration: 0.9 * fast, ease: "expo.out", stagger: 0.05 })
-      .from(".menu__foot", { opacity: 0, y: 20, duration: 0.6 * fast }, "-=0.6");
-
-    btn.addEventListener("click", () => (menuOpen ? closeMenu() : openMenu()));
-    document.addEventListener("keydown", (e) => e.key === "Escape" && menuOpen && closeMenu());
-
-    function openMenu() {
-      menuOpen = true;
-      document.body.classList.add("menu-open");
-      btn.setAttribute("aria-expanded", "true");
-      menu.setAttribute("aria-hidden", "false");
-      root.style.overflow = "hidden";
-      gsap.set(menu, { visibility: "visible" });
-      gsap.fromTo(
-        menu,
-        { clipPath: menuCircle(0) },
-        { clipPath: menuCircle(Math.hypot(window.innerWidth, window.innerHeight) * 1.1), duration: fast, ease: "expo.inOut", overwrite: true }
-      );
-      menuTl.timeScale(1).delay(0.45 * fast).restart(true);
-    }
-  }
-
-  function closeMenu() {
-    if (!menuOpen || !menuTl) return;
-    menuOpen = false;
-    const menu = $(".menu");
-    document.body.classList.remove("menu-open");
-    $(".nav__menu").setAttribute("aria-expanded", "false");
-    menu.setAttribute("aria-hidden", "true");
-    root.style.overflow = "";
-    menuTl.pause();
-    gsap.to(menu, {
-      clipPath: menuCircle(0),
-      duration: reduceMotion ? 0.01 : 0.8,
-      ease: "expo.inOut",
-      overwrite: true,
-      onComplete: () => gsap.set(menu, { visibility: "hidden" }),
-    });
-  }
-
-  /* ------------------------------------------------------------------ *
-   * Nav hides on scroll down, returns on scroll up
-   * ------------------------------------------------------------------ */
-  function navOnScroll() {
-    const nav = $(".nav");
-    ScrollTrigger.create({
-      start: 0,
-      end: "max",
-      onUpdate: (self) => {
-        if (menuOpen) return;
-        nav.classList.toggle("is-hidden", self.direction === 1 && self.scroll() > window.innerHeight * 0.6);
-      },
-    });
-  }
-
-})();
+  return {
+    fits,
+    chapter: () => clamp(Math.floor(sceneTime(window.scrollY)), 0, chapters.length - 1),
+    // start (or restart) the film; k is a chapter to open on, null keeps the scroll position
+    resume(k) {
+      measure();
+      scene.resize();
+      if (k != null) window.scrollTo(0, landY(k));
+      Ts = sceneTime(window.scrollY);
+      lastY = window.scrollY;
+      last = performance.now();
+      lastP.fill(-1);
+      state.chapter = -1;
+      running = true;
+      scene.update(Ts, time, 0.016, 0);
+      updateUI(Ts);
+      requestAnimationFrame(() => running && root.classList.add("is-ready"));
+      raf = requestAnimationFrame(frame);
+    },
+    pause() {
+      running = false;
+      cancelAnimationFrame(raf);
+      stop();
+      overScreen = -1;
+      chapters.forEach((c) => c.classList.remove("is-current"));
+      root.classList.remove("is-ready", "is-over-screen");
+    },
+  };
+}

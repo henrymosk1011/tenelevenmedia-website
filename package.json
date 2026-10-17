@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "npx --yes serve -l 3000 .",
-    "shots": "node scripts/screenshot.mjs"
+    "shots": "node scripts/screenshot.mjs",
+    "lock-v1": "node scripts/lock-v1.mjs"
   },
   "devDependencies": {
     "playwright": "^1.56.1"

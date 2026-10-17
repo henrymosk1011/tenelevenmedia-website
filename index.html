@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>TENELEVENMEDIA | Web Design Studio</title>
   <meta name="description" content="TENELEVENMEDIA is an independent web design studio crafting bold, fluid, unforgettable websites for brands, artists and businesses that refuse to blend in." />
   <meta name="theme-color" content="#0c0c0d" />
@@ -15,336 +15,241 @@
   <meta name="twitter:card" content="summary_large_image" />
 
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" />
-
+  <link rel="modulepreload" href="vendor/three/three.core.min.js" />
+  <link rel="modulepreload" href="vendor/three/three.module.min.js" />
   <link rel="stylesheet" href="css/style.css" />
 
   <script>
-    (function (c) {
-      c.replace("no-js", "js");
-      // hide the hero until its entrance animation starts (CSS shows it anyway after 3s)
-      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) c.add("intro");
-    })(document.documentElement.classList);
+    // Pick the film or the static page before anything paints. The film needs
+    // WebGL 2, a screen big enough for its layout, and a reader who wants
+    // motion: the Motion switch in the nav, else the system reduce motion setting.
+    (function (h) {
+      h.classList.replace("no-js", "js");
+      var pref = null, gl = false;
+      try { pref = localStorage.getItem("tm-motion"); } catch (e) {}
+      try { gl = !!document.createElement("canvas").getContext("webgl2"); } catch (e) {}
+      var motion = pref ? pref === "on" : !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var roomy = window.innerWidth >= 320 && window.innerHeight >= 500;
+      h.dataset.gl = gl ? "1" : "0";
+      h.classList.add(motion && gl && roomy ? "film" : "static");
+    })(document.documentElement);
   </script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
 
-  <!-- ============ CURSOR LABEL (shown over project links) ============ -->
-  <div class="cursor" aria-hidden="true">
-    <div class="cursor__ring"><span class="cursor__label">View</span></div>
-  </div>
+  <canvas class="stage" aria-hidden="true"></canvas>
+  <div class="fx" aria-hidden="true"><div class="fx__vignette"></div><div class="fx__grain"></div></div>
 
   <!-- ============ NAV ============ -->
   <header class="nav">
-    <a href="#top" class="nav__logo" aria-label="TENELEVENMEDIA, back to top">TENELEVENMEDIA</a>
+    <a href="#top" class="nav__logo" data-jump aria-label="TENELEVENMEDIA, back to the start">TENELEVENMEDIA</a>
     <p class="nav__status mono"><span class="pulse"></span>Booking new projects</p>
-    <button class="nav__menu" type="button" aria-expanded="false" aria-controls="menu" data-magnetic>
-      <span class="nav__menu-text"><span>Menu</span><span>Close</span></span>
-      <span class="nav__menu-icon"><i></i><i></i></span>
-    </button>
-  </header>
-
-  <!-- ============ MENU OVERLAY ============ -->
-  <div class="menu" id="menu" aria-hidden="true">
-    <nav class="menu__links" aria-label="Main">
-      <a href="#work"><span class="mono">01</span><span class="menu__word"><span>Work</span></span></a>
-      <a href="#services"><span class="mono">02</span><span class="menu__word"><span>Services</span></span></a>
-      <a href="#process"><span class="mono">03</span><span class="menu__word"><span>Process</span></span></a>
-      <a href="#index"><span class="mono">04</span><span class="menu__word"><span>Index</span></span></a>
-      <a href="#contact"><span class="mono">05</span><span class="menu__word"><span>Contact</span></span></a>
-    </nav>
-    <div class="menu__foot">
-      <a class="menu__email" data-email href="#"></a>
-      <ul class="menu__socials" data-socials></ul>
+    <div class="nav__end">
+      <nav class="nav__links mono" aria-label="Chapters">
+        <a href="#work" data-jump>Work</a>
+        <a href="#services" data-jump>Services</a>
+        <a href="#process" data-jump>Process</a>
+        <a href="#contact" data-jump class="nav__cta">Contact</a>
+      </nav>
+      <button class="motion mono" type="button" role="switch" aria-checked="false" data-motion>
+        <span>Motion</span>
+        <span class="motion__track" aria-hidden="true"><span class="motion__knob"></span></span>
+      </button>
     </div>
+  </header>
+  <p class="sr-only" role="status" data-status></p>
+
+  <!-- ============ HUD: the film's timeline ============ -->
+  <div class="hud mono" role="group" aria-label="Film controls">
+    <button class="hud__play" type="button" data-play data-state="paused" aria-label="Play the film">
+      <span class="hud__icon" aria-hidden="true"><i></i><i></i></span>
+      <span class="hud__play-label" aria-hidden="true">Play</span>
+    </button>
+    <p class="hud__chapter"><span data-hud-num>00</span><span data-hud-name>Intro</span></p>
+    <div class="hud__bar" data-hud-bar>
+      <i class="hud__fill" data-hud-fill></i>
+      <input class="hud__seek" type="range" min="0" max="1000" step="10" value="0" aria-label="Film position" data-seek />
+    </div>
+    <p class="hud__time"><span data-hud-time>00:00</span> / <span data-hud-total>01:11</span></p>
   </div>
 
-  <div class="grain" aria-hidden="true"></div>
+  <div class="pointer-label mono" aria-hidden="true">Visit <span>↗</span></div>
 
-  <main id="main">
-    <!-- ============ HERO ============ -->
-    <section class="hero" id="top">
-      <canvas class="hero__fluid" aria-hidden="true"></canvas>
-      <div class="hero__inner">
-        <div class="hero__top">
-          <p class="mono hero__eyebrow"><span data-reveal>(Independent web design studio)</span></p>
-          <p class="hero__lede" data-split="words">We design and build <em>bold</em>, fluid, unforgettable websites for brands, artists &amp; businesses that refuse to blend in.</p>
+  <main id="main" tabindex="-1">
+    <!-- ============ 0 INTRO ============ -->
+    <section class="ch ch--hero" id="top" data-chapter="Intro" style="--len: 230">
+      <div class="ch__sticky">
+        <div class="hero">
+          <div class="hero__top">
+            <p class="mono hero__eyebrow">(Independent web design studio)</p>
+            <p class="hero__lede">We design and build <em>bold</em>, fluid, unforgettable websites for brands, artists &amp; businesses that refuse to blend in.</p>
+          </div>
+          <div class="hero__bottom">
+            <h1 class="hero__title">
+              <span class="sr-only">TENELEVENMEDIA. </span>
+              <span class="line"><span>Design</span></span>
+              <span class="line"><span>that <em>moves.</em></span></span>
+            </h1>
+            <div class="hero__cta">
+              <button class="play-btn" type="button" data-play data-state="paused">
+                <span class="play-btn__icon" aria-hidden="true"></span>
+                <span>Play the film</span>
+              </button>
+              <p class="mono hero__hint">or scroll to explore <i class="arrow-down"></i></p>
+            </div>
+          </div>
         </div>
+      </div>
+    </section>
 
-        <div class="hero__mid">
-          <h1 class="hero__title">
-            <span class="sr-only">TENELEVENMEDIA. </span>
-            <span class="line"><span>Design</span></span>
-            <span class="line"><span>that <em>moves.</em></span></span>
-          </h1>
-          <a href="#about" class="badge" aria-label="Scroll down">
-            <svg viewBox="0 0 200 200" class="badge__ring" aria-hidden="true">
-              <defs><path id="circlePath" d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0" /></defs>
-              <text><textPath href="#circlePath" textLength="488" lengthAdjust="spacing">TENELEVENMEDIA ✺ WEB DESIGN STUDIO ✺ </textPath></text>
-            </svg>
-            <span class="badge__icon" aria-hidden="true"><i class="arrow-down"></i></span>
+    <!-- ============ 1 STUDIO ============ -->
+    <section class="ch ch--about" id="about" data-chapter="Studio" style="--len: 260">
+      <div class="ch__sticky">
+        <div class="about">
+          <h2 class="label mono"><span class="label__num">(01)</span> The studio</h2>
+          <p class="about__text" data-words>
+            TENELEVENMEDIA is an independent studio blending a designer's eye, an engineer's precision and a musician's sense of <em>rhythm</em> to craft websites that look stunning, move beautifully, load fast and stay secure.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 2 RHYTHM ============ -->
+    <section class="ch ch--rhythm" id="rhythm" data-chapter="Rhythm" style="--len: 240">
+      <div class="ch__sticky">
+        <div class="rhythm">
+          <div class="rhythm__head">
+            <p class="label mono"><span class="label__num">(02)</span> How we work</p>
+            <h2 class="title">Every pixel, <em>in rhythm.</em></h2>
+          </div>
+          <div class="rhythm__cols">
+            <div class="rhythm__col" style="--d: 0">
+              <span class="mono"><b>01</b> Design</span>
+              <p>No templates. Every page is art directed from a blank canvas around your brand, your audience and your goals.</p>
+            </div>
+            <div class="rhythm__col" style="--d: 1">
+              <span class="mono"><b>02</b> Engineering</span>
+              <p>Built by hand, responsive and obsessed with performance, with an IT &amp; cybersecurity background baked into every launch.</p>
+            </div>
+            <div class="rhythm__col" style="--d: 2">
+              <span class="mono"><b>03</b> Motion</span>
+              <p>Storytelling that unfolds as you scroll, plus fluid microinteractions that make people stop, explore and remember you.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 3 WORK ============ -->
+    <section class="ch ch--work" id="work" data-chapter="Selected work" style="--len: 640">
+      <div class="ch__sticky">
+        <div class="work">
+          <div class="work__head">
+            <p class="label mono"><span class="label__num">(03)</span> Selected work</p>
+            <h2 class="title work__title">Selected <em>work</em> <sup class="mono" data-count></sup></h2>
+            <p class="work__hint mono">Keep scrolling to fly through recent launches</p>
+          </div>
+          <!-- one entry per project, built from js/projects.js -->
+          <ol class="work__list" data-work></ol>
+          <ol class="work__index mono" data-work-index aria-hidden="true"></ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 4 SERVICES ============ -->
+    <section class="ch ch--services" id="services" data-chapter="Services" style="--len: 340">
+      <div class="ch__sticky">
+        <div class="split">
+          <div class="split__text">
+            <h2 class="label mono"><span class="label__num">(04)</span> Services</h2>
+            <ol class="panels" data-panels="services">
+              <li class="panel">
+                <span class="panel__num mono">01 / 04</span>
+                <h3 class="panel__title">Web <em>design</em></h3>
+                <p>Bespoke design built to convert, crafted from a blank canvas and never from a template. Every layout, interaction and detail is made for your brand.</p>
+                <ul class="tags mono"><li>UI / UX</li><li>Wireframes</li><li>Prototyping</li><li>Art direction</li><li>Responsive</li></ul>
+              </li>
+              <li class="panel">
+                <span class="panel__num mono">02 / 04</span>
+                <h3 class="panel__title">Develop<em>ment</em></h3>
+                <p>Lightning fast sites built by hand, with smooth motion and clean, accessible code. Built to rank, built to scale, built to last.</p>
+                <ul class="tags mono"><li>Frontend</li><li>CMS</li><li>Ecommerce</li><li>Animation</li><li>Performance</li></ul>
+              </li>
+              <li class="panel">
+                <span class="panel__num mono">03 / 04</span>
+                <h3 class="panel__title">Brand<em>ing</em></h3>
+                <p>Logos, type, colour and graphic systems that give your business a visual voice people recognise instantly, online and off.</p>
+                <ul class="tags mono"><li>Logo design</li><li>Identity</li><li>Graphic design</li><li>Social assets</li></ul>
+              </li>
+              <li class="panel">
+                <span class="panel__num mono">04 / 04</span>
+                <h3 class="panel__title">Launch <em>&amp; care</em></h3>
+                <p>Secure hosting, SEO, analytics and ongoing maintenance, backed by real IT &amp; cybersecurity experience so your site stays fast and safe.</p>
+                <ul class="tags mono"><li>Hosting</li><li>SEO</li><li>Security hardening</li><li>Maintenance</li></ul>
+              </li>
+            </ol>
+            <div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 5 PROCESS ============ -->
+    <section class="ch ch--process" id="process" data-chapter="Process" style="--len: 300">
+      <div class="ch__sticky">
+        <div class="split">
+          <div class="split__text">
+            <p class="label mono"><span class="label__num">(05)</span> Process</p>
+            <h2 class="title process__title">From first call to <em>launch.</em></h2>
+            <ol class="steps" data-panels="steps">
+              <li class="step"><span class="mono">01</span><div><h3>Discover</h3><p>We dig into your goals, audience and competition to define what success looks like and what makes you different.</p></div></li>
+              <li class="step"><span class="mono">02</span><div><h3>Design</h3><p>Moodboards, wireframes and high fidelity designs, refined together until every pixel feels right.</p></div></li>
+              <li class="step"><span class="mono">03</span><div><h3>Develop</h3><p>Coded by hand, responsive and animated, then tested on every screen size and browser that matters.</p></div></li>
+              <li class="step"><span class="mono">04</span><div><h3><em>Launch</em></h3><p>Secure deployment, SEO and analytics. Your new site is live and ready to make noise.</p></div></li>
+            </ol>
+          </div>
+        </div>
+        <div class="dial-label" aria-hidden="true">
+          <span class="dial-label__num" data-dial-num>01</span>
+          <span class="dial-label__pct mono" data-dial-pct>0%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 6 CONTACT ============ -->
+    <section class="ch ch--contact" id="contact" data-chapter="Contact" style="--len: 220">
+      <div class="ch__sticky">
+        <div class="contact">
+          <h2 class="label mono"><span class="label__num">(06)</span> Got a project in mind?</h2>
+          <a class="contact__cta" data-email-link href="#">
+            <span class="contact__line">Let's make</span>
+            <span class="contact__gap" aria-hidden="true"></span>
+            <span class="contact__line"><em>something</em> loud.</span>
           </a>
-        </div>
-
-        <div class="hero__brand" aria-hidden="true">
-          <div class="wordmark" data-fit>TENELEVEN</div>
-        </div>
-
-        <div class="hero__bottom mono">
-          <span data-reveal>Web design · Development · Branding</span>
-          <span class="hero__scroll" data-reveal>Scroll to explore <i class="arrow-down"></i></span>
-          <span data-reveal>&copy; <span data-year></span></span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ MANIFESTO ============ -->
-    <section class="manifesto" id="about">
-      <div class="container">
-        <p class="label mono"><span class="label__num">(01)</span> About the studio</p>
-        <p class="manifesto__text" data-scrub-words>
-          TENELEVENMEDIA is an independent studio blending a
-          <span class="pill pill--a" aria-hidden="true"></span>
-          designer's eye, an engineer's precision and a musician's sense of
-          <em>rhythm</em>
-          <span class="pill pill--b" aria-hidden="true"></span>
-          to craft websites that look stunning, move beautifully, load fast and stay secure.
-        </p>
-        <div class="manifesto__cols">
-          <div class="manifesto__col" data-fade>
-            <span class="mono">Design</span>
-            <p>No templates. Every page is art directed from a blank canvas around your brand, your audience and your goals.</p>
-          </div>
-          <div class="manifesto__col" data-fade>
-            <span class="mono">Engineering</span>
-            <p>Built by hand, responsive and obsessed with performance, with an IT &amp; cybersecurity background baked into every launch.</p>
-          </div>
-          <div class="manifesto__col" data-fade>
-            <span class="mono">Motion</span>
-            <p>Storytelling that unfolds as you scroll, plus fluid microinteractions that make people stop, explore and remember you.</p>
+          <div class="contact__row">
+            <dl class="contact__meta">
+              <div><dt class="mono">Email</dt><dd><a class="link-underline" data-email href="#"></a></dd></div>
+              <div><dt class="mono">Studio time</dt><dd data-clock>--:--</dd></div>
+              <div data-socials-wrap hidden><dt class="mono">Socials</dt><dd><ul class="contact__socials" data-socials></ul></dd></div>
+            </dl>
+            <a class="btn-round" data-email-link href="#"><span>Start a<br />project<span class="sr-only"> by email</span></span></a>
+            <div class="contact__legal mono">
+              <span>&copy; <span data-year></span> TENELEVENMEDIA</span>
+              <span>Designed &amp; built in house</span>
+              <a href="#top" class="link-underline" data-jump>Replay from the top ↑</a>
+            </div>
           </div>
         </div>
       </div>
-    </section>
-
-    <!-- ============ MARQUEE ============ -->
-    <section class="marquee-band" aria-label="Capabilities">
-      <div class="marquee" data-marquee="1">
-        <div class="marquee__inner">
-          <span>Web Design</span><b>✺</b><span>Development</span><b>✺</b><span>Branding</span><b>✺</b><span>Motion</span><b>✺</b><span>Ecommerce</span><b>✺</b><span>SEO</span><b>✺</b>
-        </div>
-      </div>
-      <div class="marquee marquee--alt" data-marquee="-1" aria-hidden="true">
-        <div class="marquee__inner">
-          <span>Bold</span><b>✺</b><span><em>fluid</em></span><b>✺</b><span>Modern</span><b>✺</b><span><em>artistic</em></span><b>✺</b><span>Secure</span><b>✺</b><span><em>fast</em></span><b>✺</b>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ SELECTED WORK (horizontal) ============ -->
-    <section class="work" id="work">
-      <div class="work__pin">
-        <div class="work__track">
-          <div class="work__intro">
-            <p class="label mono"><span class="label__num">(02)</span> Selected work</p>
-            <h2 class="work__title">
-              <span class="line"><span>Selected</span></span>
-              <span class="line"><span><em>work</em> <sup class="mono" data-count></sup></span></span>
-            </h2>
-            <p class="work__hint mono">Keep scrolling <i class="arrow-right"></i></p>
-          </div>
-
-          <!-- project cards are rendered here from js/projects.js -->
-          <div class="work__cards" data-cards></div>
-
-          <div class="work__outro">
-            <p class="mono">Your project</p>
-            <a href="#contact" class="work__outro-link" data-cursor="Let's go">
-              <span>could be</span>
-              <span><em>next.</em></span>
-            </a>
-          </div>
-        </div>
-
-        <div class="work__hud mono" aria-hidden="true">
-          <span class="work__hud-count"><span data-current>01</span> / <span data-total>05</span></span>
-          <span class="work__progress"><i></i></span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ SERVICES (stacking cards) ============ -->
-    <section class="services" id="services">
-      <div class="container">
-        <div class="section-head">
-          <p class="label mono"><span class="label__num">(03)</span> Services</p>
-          <h2 class="section-title" data-split="words">Everything you need to <em>stand out</em> online.</h2>
-        </div>
-      </div>
-
-      <div class="stack">
-        <article class="stack__card" style="--card-bg: var(--accent); --card-fg: var(--ink);">
-          <div class="stack__top mono"><span>01</span><span>Web Design</span></div>
-          <h3 class="stack__title">Web <em>design</em></h3>
-          <div class="stack__body">
-            <p>Bespoke design built to convert, crafted from a blank canvas and never from a template. Every layout, interaction and detail is made for your brand.</p>
-            <ul class="tags"><li>UI / UX</li><li>Wireframes</li><li>Prototyping</li><li>Art direction</li><li>Responsive</li></ul>
-          </div>
-        </article>
-        <article class="stack__card" style="--card-bg: var(--bone); --card-fg: var(--ink);">
-          <div class="stack__top mono"><span>02</span><span>Development</span></div>
-          <h3 class="stack__title">Develop<em>ment</em></h3>
-          <div class="stack__body">
-            <p>Lightning fast sites built by hand, with smooth motion and clean, accessible code. Built to rank, built to scale, built to last.</p>
-            <ul class="tags"><li>Frontend</li><li>CMS</li><li>Ecommerce</li><li>Animation</li><li>Performance</li></ul>
-          </div>
-        </article>
-        <article class="stack__card" style="--card-bg: var(--violet); --card-fg: var(--bone);">
-          <div class="stack__top mono"><span>03</span><span>Branding</span></div>
-          <h3 class="stack__title">Brand<em>ing</em></h3>
-          <div class="stack__body">
-            <p>Logos, type, colour and graphic systems that give your business a visual voice people recognise instantly, online and off.</p>
-            <ul class="tags"><li>Logo design</li><li>Identity</li><li>Graphic design</li><li>Social assets</li></ul>
-          </div>
-        </article>
-        <article class="stack__card" style="--card-bg: #1b1b1e; --card-fg: var(--bone);">
-          <div class="stack__top mono"><span>04</span><span>Launch &amp; Security</span></div>
-          <h3 class="stack__title">Launch <em>&amp; care</em></h3>
-          <div class="stack__body">
-            <p>Secure hosting, SEO, analytics and ongoing maintenance, backed by real IT &amp; cybersecurity experience so your site stays fast and safe.</p>
-            <ul class="tags"><li>Hosting</li><li>SEO</li><li>Security hardening</li><li>Maintenance</li></ul>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- ============ BIG TYPE (horizontal scrub) ============ -->
-    <section class="bigtype" aria-hidden="true">
-      <div class="bigtype__row" data-dir="-1">Strategy <b>✺</b> Design <b>✺</b> Code <b>✺</b> Launch <b>✺</b> Strategy <b>✺</b> Design <b>✺</b></div>
-      <div class="bigtype__row bigtype__row--outline" data-dir="1">Look good <b>✺</b> <em>feel good</em> <b>✺</b> Look good <b>✺</b> <em>feel good</em> <b>✺</b></div>
-      <div class="bigtype__row" data-dir="-1"><em>Make</em> noise <b>✺</b> <em>Make</em> noise <b>✺</b> <em>Make</em> noise <b>✺</b></div>
-    </section>
-
-    <!-- ============ PROCESS (pinned dial) ============ -->
-    <section class="process" id="process">
-      <div class="process__pin">
-        <div class="process__head">
-          <p class="label mono"><span class="label__num">(04)</span> Process</p>
-          <h2 class="section-title">From first call to <em>launch.</em></h2>
-        </div>
-
-        <div class="process__dial" aria-hidden="true">
-          <svg viewBox="0 0 400 400">
-            <defs><path id="dialPath" d="M200,200 m-150,0 a150,150 0 1,1 300,0 a150,150 0 1,1 -300,0" /></defs>
-            <circle cx="200" cy="200" r="190" class="dial__face" />
-            <circle cx="200" cy="200" r="190" class="dial__progress" pathLength="1" />
-            <g class="dial__text">
-              <text><textPath href="#dialPath" textLength="936" lengthAdjust="spacing">DISCOVER ✺ DESIGN ✺ DEVELOP ✺ LAUNCH ✺ </textPath></text>
-            </g>
-            <circle cx="200" cy="200" r="118" class="dial__inner" />
-            <g class="dial__nodes">
-              <circle cx="200" cy="10" r="9" />
-              <circle cx="390" cy="200" r="9" />
-              <circle cx="200" cy="390" r="9" />
-              <circle cx="10" cy="200" r="9" />
-            </g>
-          </svg>
-          <div class="dial__center">
-            <div class="dial__count"><div class="dial__count-track"><span>01</span><span>02</span><span>03</span><span>04</span></div></div>
-            <span class="dial__status mono">0%</span>
-          </div>
-        </div>
-
-        <ol class="process__steps">
-          <li class="step">
-            <span class="step__num mono">01 / 04</span>
-            <h3 class="step__title">Discover</h3>
-            <p>We dig into your goals, audience and competition to define what success looks like and what makes you different.</p>
-          </li>
-          <li class="step">
-            <span class="step__num mono">02 / 04</span>
-            <h3 class="step__title">Design</h3>
-            <p>Moodboards, wireframes and high fidelity designs, refined together until every pixel feels right.</p>
-          </li>
-          <li class="step">
-            <span class="step__num mono">03 / 04</span>
-            <h3 class="step__title">Develop</h3>
-            <p>Coded by hand, responsive and animated, then tested on every screen size and browser that matters.</p>
-          </li>
-          <li class="step">
-            <span class="step__num mono">04 / 04</span>
-            <h3 class="step__title"><em>Launch</em></h3>
-            <p>Secure deployment, SEO and analytics. Your new site is live and ready to make noise.</p>
-          </li>
-        </ol>
-      </div>
-    </section>
-
-    <!-- ============ INDEX (list + cursor preview) ============ -->
-    <section class="index" id="index">
-      <div class="container">
-        <div class="section-head section-head--row">
-          <p class="label mono"><span class="label__num">(05)</span> Project index</p>
-          <h2 class="section-title" data-split="words">All <em>projects</em></h2>
-        </div>
-        <div class="index__head mono" aria-hidden="true">
-          <span>#</span><span>Project</span><span>Type</span><span>Year</span><span></span>
-        </div>
-        <ul class="index__list" data-index></ul>
-      </div>
-      <div class="index__preview" aria-hidden="true"><div class="index__preview-track" data-preview></div></div>
     </section>
   </main>
 
-  <!-- ============ CONTACT / FOOTER (curtain reveal) ============ -->
-  <footer class="footer" id="contact">
-    <div class="footer__clip">
-      <div class="footer__sticky">
-        <canvas class="footer__fluid" aria-hidden="true"></canvas>
-        <div class="footer__inner">
-          <p class="label mono"><span class="label__num">(06)</span> Got a project in mind?</p>
-          <a class="footer__cta" data-email-link href="#" data-cursor="Say hi">
-            <span class="footer__cta-line">Let's make</span>
-            <span class="footer__cta-line"><em>something</em> loud.</span>
-          </a>
-          <div class="footer__row">
-            <a class="btn-round" data-email-link href="#" data-magnetic>
-              <span>Start a<br />project</span>
-            </a>
-            <div class="footer__meta">
-              <div>
-                <span class="mono muted">Email</span>
-                <a class="link-underline" data-email href="#"></a>
-              </div>
-              <div>
-                <span class="mono muted">Studio time</span>
-                <span data-clock>--:--</span>
-              </div>
-              <div>
-                <span class="mono muted">Socials</span>
-                <ul class="footer__socials" data-socials></ul>
-              </div>
-            </div>
-          </div>
-          <div class="footer__bottom mono">
-            <span>&copy; <span data-year></span> TENELEVENMEDIA</span>
-            <span>Designed &amp; built in house</span>
-            <a href="#top" class="link-underline" data-scroll-top>Back to top ↑</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </footer>
-
-  <script src="vendor/gsap.min.js"></script>
-  <script src="vendor/ScrollTrigger.min.js"></script>
   <script src="js/projects.js"></script>
   <script src="js/screenshots.js"></script>
-  <script src="js/fluid.js"></script>
-  <script src="js/main.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
