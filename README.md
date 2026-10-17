@@ -22,6 +22,31 @@ Throughout the site: a "Visit ↗" label that appears next to the pointer over p
 
 **Accessibility:** if someone has *reduce motion* turned on in their system settings, the site switches off the pinning, scroll animation and WebGL animation. The gallery becomes a normal swipeable row and the process dial is shown complete. Keyboard focus is visible, and there's a skip link.
 
+## The 3D preview (`/next/`)
+
+`next/` holds a second, separate version of the site that plays like a film as you scroll: **www.tenelevenmedia.com/next/**. The homepage above is untouched; nothing links to the preview and it's marked `noindex`, so it stays out of search results until you decide to use it.
+
+One fixed WebGL canvas (Three.js) sits behind the page, and the scroll position drives a camera through seven chapters:
+
+| Chapter | What plays |
+| --- | --- |
+| **Intro** | A liquid chrome core with orbit rings in front of a giant `TENELEVEN` wordmark |
+| **Studio** | The core burns away into about 40,000 particles that stream into a spiralling tunnel while the paragraph lights up word by word |
+| **Rhythm** | The particles settle into glowing sound wave ridgelines |
+| **Work** | A corridor of floating, curved project screens. Each site scrolls inside its screen as you fly past; click a screen or its caption to visit |
+| **Services** | The particles assemble a browser window, a torus knot, the ✺ mark and a shield, one per service |
+| **Process** | A dial that fills step by step and lands on **Live** |
+| **Contact** | The core re-forms, molten orange, between the two lines of "Let's make something loud." |
+
+There's a timeline along the bottom like a video player: click it to jump, or press **Play** and the page scrolls itself through the whole film (about 71 seconds). Any scroll, swipe or key press hands control back. The menu links fast forward to their chapter.
+
+- **Projects** come from the same `js/projects.js` and screenshots as the homepage, so there's nothing extra to update.
+- **Phones and slower machines** get fewer particles and a lower resolution automatically, and the resolution drops further if frames start running slow.
+- **Reduced motion** (or a browser without WebGL 2) gets a plain, static version of the same content with a grid of project screenshots.
+- **Tuning:** `DURATION` (Play length) and `FOLLOW` (how quickly the 3D catches up with the scrollbar) are at the top of `next/main.js`. The camera path, colours and timing for each chapter are keyframes in `build()` in `next/scene.js`.
+
+To make it the homepage, move the contents of `next/` to the root (fixing the `../` paths) or point the root `index.html` at it, and remove the `noindex` tag.
+
 ## Adding your projects
 
 Everything you'll usually change is in **`js/projects.js`**:
@@ -118,7 +143,8 @@ js/projects.js        ← your projects, email, socials
 js/screenshots.js     auto-generated screenshot map
 js/main.js            animations and interactions
 js/fluid.js           WebGL liquid gradient
-vendor/               GSAP 3.13 + ScrollTrigger (self-hosted)
+vendor/               GSAP 3.13 + ScrollTrigger, Three.js 0.185 (self-hosted)
+next/                 the 3D scroll film preview (see above)
 scripts/screenshot.mjs  Playwright screenshot capture
 assets/               favicon, project screenshots
 CNAME                 custom domain for GitHub Pages
