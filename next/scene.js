@@ -927,7 +927,7 @@ export function createScene({ canvas, projects, asset, tier = "high" }) {
     // on tall screens the 3D sits in the upper part, above the text
     const oyAt = (d) => (portrait ? -2 * d * tanH * 0.17 : 0);
     const wordScale = Math.min(1.6, (2 * tanH * aspect * (hero + 2.8)) * 0.92 / 10.6);
-    const core = portrait ? Math.max(fitW(2.5, 0.5), fitH(2.5, 0.22)) : fitH(2.5, 0.22);
+    const core = portrait ? Math.max(fitW(2.5, 0.44), fitH(2.5, 0.2)) : fitH(2.5, 0.22);
     L = { portrait, fov, hero, stage, dial, screenDist, sx, ox, wordScale, core };
     camera.fov = fov;
     wordmark.scale.setScalar(wordScale);

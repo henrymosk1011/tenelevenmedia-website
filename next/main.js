@@ -1,7 +1,8 @@
 /* ==========================================================================
    TENELEVENMEDIA /next: page controller
    Reads the scroll position, turns it into the film's scene time and keeps
-   the text, the timeline HUD and the 3D scene in step.
+   the text, the timeline HUD and the 3D scene in step. Also decides between
+   the film and the still version of the page (see "Motion" below).
    ========================================================================== */
 
 import { WORK_PAD, workTime, workHalf } from "./timeline.js";
@@ -32,6 +33,7 @@ const shotFor = (p) => {
   const s = p.image || SHOTS[slugify(p.title)] || "";
   return typeof s === "string" ? { poster: s, full: "" } : { poster: s.poster || "", full: s.full || "" };
 };
+const NEW_TAB = '<span class="sr-only"> (opens in a new tab)</span>';
 
 const projects = (window.PROJECTS || []).map((p) => ({ ...p, slug: slugify(p.title), ...shotFor(p) }));
 const n = projects.length;
@@ -43,11 +45,13 @@ function renderContent() {
   const email = SITE.email || "";
   $$("[data-email]").forEach((a) => { a.textContent = email; a.href = `mailto:${email}`; });
   $$("[data-email-link]").forEach((a) => (a.href = `mailto:${email}?subject=New%20project%20enquiry`));
+  // the big call to action is an email link: say so in its name
+  $$(".contact__cta").forEach((a) => a.setAttribute("aria-label", `Let's make something loud. Email ${email}`));
 
   const socials = SITE.socials || [];
   if (socials.length) {
     $$("[data-socials]").forEach((ul) => {
-      ul.innerHTML = socials.map((s) => `<li><a class="link-underline" href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a></li>`).join("");
+      ul.innerHTML = socials.map((s) => `<li><a class="link-underline" href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}${NEW_TAB}</a></li>`).join("");
     });
     $$("[data-socials-wrap]").forEach((el) => (el.hidden = false));
   }
@@ -62,28 +66,32 @@ function renderContent() {
         <span class="proj__mask"><span class="proj__num mono">${pad(i + 1)} / ${pad(n)}</span></span>
         <span class="proj__mask"><span class="proj__title">${esc(p.title)}</span></span>
         <span class="proj__mask"><span class="proj__meta mono">${esc(p.category)}${p.year ? ` · ${esc(p.year)}` : ""}</span></span>
-        <span class="proj__mask"><span class="proj__visit mono">Visit ${esc(domainOf(p.url))} <span aria-hidden="true">↗</span></span></span>
+        <span class="proj__mask"><span class="proj__visit mono">Visit ${esc(domainOf(p.url))} <span aria-hidden="true">↗</span>${NEW_TAB}</span></span>
       </a>
     </li>`).join("");
   $("[data-work-index]").innerHTML = projects.map((p, i) => `<li><button type="button" tabindex="-1" data-project="${i}" title="${esc(p.title)}">${pad(i + 1)}</button></li>`).join("");
 
-  // the studio paragraph lights up word by word
+  // the studio paragraph lights up word by word; screen readers get it as one sentence
   $$("[data-words]").forEach((el) => {
-    const words = [];
+    const sr = document.createElement("span");
+    sr.className = "sr-only";
+    sr.textContent = el.textContent.replace(/\s+/g, " ").trim();
+    const shown = document.createElement("span");
+    shown.setAttribute("aria-hidden", "true");
+    let i = 0;
     [...el.childNodes].forEach((node) => {
       if (node.nodeType === 3) {
         node.textContent.split(/(\s+)/).forEach((part) => {
           if (!part) return;
-          if (/^\s+$/.test(part)) words.push(document.createTextNode(" "));
-          else { const s = document.createElement("span"); s.className = "w"; s.textContent = part; words.push(s); }
+          if (/^\s+$/.test(part)) { shown.append(" "); return; }
+          const s = document.createElement("span"); s.className = "w"; s.textContent = part; s.style.setProperty("--i", i++); shown.append(s);
         });
       } else {
-        const s = document.createElement("span"); s.className = "w"; s.appendChild(node.cloneNode(true)); words.push(s);
+        const s = document.createElement("span"); s.className = "w"; s.append(node.cloneNode(true)); s.style.setProperty("--i", i++); shown.append(s);
       }
     });
     el.textContent = "";
-    let i = 0;
-    words.forEach((w) => { if (w.nodeType === 1) w.style.setProperty("--i", i++); el.appendChild(w); });
+    el.append(sr, shown);
     el.style.setProperty("--n", i);
   });
 
@@ -101,19 +109,125 @@ function renderContent() {
 renderContent();
 
 /* ==========================================================================
-   Static version (reduced motion or no WebGL): nothing more to do
+   Motion
+   The film runs only when the reader wants motion (the Motion switch, or
+   else their system reduce motion setting), the browser has WebGL 2, and the
+   layout fits the screen at the current size and zoom. Otherwise the same
+   content shows as a still page that scrolls normally.
    ========================================================================== */
-if (root.classList.contains("film")) startFilm();
+const PREF_KEY = "tm-motion";
+const chapters = $$("[data-chapter]");
+const motionSwitch = $("[data-motion]");
+const status = $("[data-status]");
+const reduceMQ = window.matchMedia("(prefers-reduced-motion: reduce)");
+const hasGL = () => root.dataset.gl === "1";
+const readPref = () => { try { return localStorage.getItem(PREF_KEY); } catch { return null; } };
+const writePref = (v) => { try { localStorage.setItem(PREF_KEY, v); } catch { /* private mode: the switch still works for this visit */ } };
+const wantsMotion = () => { const p = readPref(); return p ? p === "on" : !reduceMQ.matches; };
+const roomy = () => window.innerWidth >= 320 && window.innerHeight >= 500;
+const isFilm = () => root.classList.contains("film");
+const say = (msg) => { status.textContent = ""; setTimeout(() => (status.textContent = msg), 60); };
 
-function goStatic() {
-  root.classList.remove("film", "is-ready");
-  root.classList.add("static");
+$("#work").style.setProperty("--len", String(Math.max(220, 110 + n * 60)));
+
+let film = null; // the running film, created the first time it is needed
+let tooSmallAt = null; // window size at which the film layout last failed to fit
+
+// which chapter is on screen in the still page
+const stillChapter = () => {
+  let k = 0;
+  chapters.forEach((c, i) => { if (c.getBoundingClientRect().top <= window.innerHeight * 0.35) k = i; });
+  return k;
+};
+
+async function setMode(wantFilm, { announce = false } = {}) {
+  if (wantFilm && !isFilm()) {
+    if (!hasGL()) { if (announce) say("Motion isn't available in this browser."); }
+    else if (!roomy()) { tooSmallAt = [window.innerWidth, window.innerHeight]; if (announce) say("Motion needs a larger window or less zoom, so the page stays still."); }
+    else {
+      const k = window.scrollY < 4 ? null : stillChapter();
+      root.classList.replace("static", "film");
+      if (!film) film = await startFilm();
+      if (!film) {
+        root.classList.replace("film", "static");
+        if (announce) say("Motion isn't available in this browser.");
+      } else if (!film.fits()) {
+        tooSmallAt = [window.innerWidth, window.innerHeight];
+        root.classList.replace("film", "static");
+        if (k != null) chapters[k].scrollIntoView({ block: "start" });
+        if (announce) say("Motion needs a larger window or less zoom, so the page stays still.");
+      } else {
+        tooSmallAt = null;
+        film.resume(k);
+        if (announce) say("Motion on.");
+      }
+    }
+  } else if (!wantFilm && isFilm()) {
+    const k = film ? film.chapter() : 0;
+    film?.pause();
+    root.classList.replace("film", "static");
+    if (k > 0) chapters[k].scrollIntoView({ block: "start" });
+    if (announce) say("Motion off. The page is now still.");
+  }
+  motionSwitch.setAttribute("aria-checked", String(isFilm()));
 }
 
+motionSwitch.addEventListener("click", () => {
+  const on = !isFilm();
+  writePref(on ? "on" : "off");
+  setMode(on, { announce: true });
+});
+reduceMQ.addEventListener?.("change", () => { if (!readPref()) setMode(wantsMotion()); });
+
+// resizing or zooming: drop to the still page when the film no longer fits,
+// and try the film again once the window is clearly bigger than when it failed
+let resizeTimer = 0;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (isFilm()) {
+      if (!film.fits()) { tooSmallAt = [window.innerWidth, window.innerHeight]; setMode(false); }
+    } else if (hasGL() && wantsMotion() && roomy() && (!tooSmallAt || window.innerWidth > tooSmallAt[0] + 40 || window.innerHeight > tooSmallAt[1] + 40)) {
+      setMode(true);
+    }
+  }, 200);
+});
+
+motionSwitch.setAttribute("aria-checked", String(isFilm()));
+if (!isFilm() && hasGL() && wantsMotion() && !roomy()) tooSmallAt = [window.innerWidth, window.innerHeight];
+if (isFilm()) {
+  (async () => {
+    film = await startFilm();
+    if (!film) { root.classList.replace("film", "static"); motionSwitch.setAttribute("aria-checked", "false"); return; }
+    const check = () => { if (isFilm() && !film.fits()) { tooSmallAt = [window.innerWidth, window.innerHeight]; setMode(false); } };
+    film.resume(null);
+    check();
+    document.fonts?.ready.then(check);
+  })();
+}
+
+/* ==========================================================================
+   The film
+   ========================================================================== */
 async function startFilm() {
-  const chapters = $$("[data-chapter]");
-  const work = $("#work");
-  work.style.setProperty("--len", String(Math.max(220, 110 + n * 60)));
+  const coarse = window.matchMedia("(pointer: coarse)").matches;
+  const tier = coarse || window.innerWidth < 760 || (navigator.hardwareConcurrency || 8) <= 4 ? "low" : "high";
+  let scene;
+  try {
+    const { createScene } = await import("./scene.js");
+    scene = createScene({ canvas: $(".stage"), projects, asset, tier });
+  } catch (err) {
+    console.warn("3D scene unavailable, showing the still page instead.", err);
+    root.dataset.gl = "0";
+    return null;
+  }
+  $(".stage").addEventListener("webglcontextlost", (e) => {
+    e.preventDefault();
+    root.dataset.gl = "0";
+    setMode(false);
+  });
+
+  let running = false, raf = 0;
 
   /* ---------- measuring ---------- */
   let tops = [], lens = [], maxScroll = 1;
@@ -134,35 +248,52 @@ async function startFilm() {
     return clamp(tops[k] + (T - k) * lens[k], 0, maxScroll);
   };
 
+  // does every chapter's text fit on screen at this size and zoom?
+  const caps = $$(".proj");
+  function fits() {
+    if (!roomy()) return false;
+    const over = (el) => el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 2;
+    if ($$(".hero, .about, .rhythm, .split, .contact").some(over)) return false;
+    const css = getComputedStyle(root);
+    const room = window.innerHeight - parseFloat(css.getPropertyValue("--nav-h")) - parseFloat(css.getPropertyValue("--hud-h"));
+    if (caps.some((c) => c.offsetHeight > room - 16)) return false;
+    const cta = $(".contact__cta").getBoundingClientRect();
+    const row = $(".contact__row").getBoundingClientRect();
+    const label = $(".contact > .label").getBoundingClientRect();
+    return cta.top >= label.bottom && cta.bottom <= row.top - 4 && cta.width <= window.innerWidth;
+  }
+
   /* ---------- HUD ---------- */
   const hud = {
     num: $("[data-hud-num]"), name: $("[data-hud-name]"), time: $("[data-hud-time]"),
-    total: $("[data-hud-total]"), bar: $("[data-hud-bar]"), fill: $("[data-hud-fill]"),
+    total: $("[data-hud-total]"), bar: $("[data-hud-bar]"), fill: $("[data-hud-fill]"), seek: $("[data-seek]"),
   };
   const fmtTime = (s) => `${pad(Math.floor(s / 60))}:${pad(Math.floor(s % 60))}`;
   hud.total.textContent = fmtTime(DURATION);
   function drawTicks() {
     $$(".hud__tick", hud.bar).forEach((t) => t.remove());
-    tops.slice(1).forEach((t, k) => {
+    tops.slice(1).forEach((t) => {
       const i = document.createElement("i");
       i.className = "hud__tick";
       i.style.left = `${(t / maxScroll) * 100}%`;
-      i.title = chapters[k + 1].dataset.chapter;
-      hud.bar.appendChild(i);
+      hud.bar.insertBefore(i, hud.seek);
     });
   }
   const navLinks = $$(".nav__links a");
 
-  /* ---------- scrolling for you: Play, chapter jumps ---------- */
+  /* ---------- scrolling for you: Play, chapter jumps, the timeline ---------- */
   let auto = null; // { kind: "play" } or { kind: "jump", from, to, t, dur }
   let playY = 0;
   const playButtons = $$("[data-play]");
   const setPlaying = (on) => {
-    root.classList.toggle("is-playing", on);
     playButtons.forEach((b) => {
-      b.setAttribute("aria-pressed", String(on));
-      const label = $(".hud__play-label", b) || $("span:last-child", b);
-      if (label) label.textContent = b.classList.contains("hud__play") ? (on ? "Pause" : "Play") : on ? "Pause the film" : "Play the film";
+      b.dataset.state = on ? "playing" : "paused";
+      if (b.classList.contains("hud__play")) {
+        b.setAttribute("aria-label", on ? "Pause the film" : "Play the film");
+        $(".hud__play-label", b).textContent = on ? "Pause" : "Play";
+      } else {
+        $("span:last-child", b).textContent = on ? "Pause the film" : "Play the film";
+      }
     });
   };
   function play() {
@@ -190,21 +321,28 @@ async function startFilm() {
     if (["ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End", " "].includes(e.key) && e.target === document.body) interrupt();
   });
 
+  // the timeline is a range input: drag it, click it, or use the arrow keys
+  let seeking = false, lastSeek = -1, lastSeekText = "";
+  hud.seek.addEventListener("pointerdown", () => (seeking = true));
+  window.addEventListener("pointerup", () => (seeking = false));
+  hud.seek.addEventListener("input", () => {
+    stop();
+    window.scrollTo(0, (hud.seek.value / 1000) * maxScroll);
+  });
+
   // where each chapter lands when you jump to it (progress within the chapter)
-  const LAND = { top: 0, about: 0.35, rhythm: 0.45, work: 0.035, services: 0.1, process: 0.12, contact: 1 };
+  const LAND = { top: 0, about: 0.5, rhythm: 0.5, work: 0.035, services: 0.1, process: 0.12, contact: 1 };
+  const landY = (k) => yForTime(k + (LAND[chapters[k].id] ?? 0.1));
   $$("[data-jump]").forEach((a) => {
     a.addEventListener("click", (e) => {
+      if (!running) return; // the still page just follows the link
       const id = (a.getAttribute("href") || "").slice(1);
       const k = chapters.findIndex((c) => c.id === id);
       if (k < 0) return;
       e.preventDefault();
-      jumpTo(yForTime(k + (LAND[id] ?? 0.1)));
+      jumpTo(landY(k));
       history.replaceState(null, "", id === "top" ? location.pathname : `#${id}`);
     });
-  });
-  hud.bar.addEventListener("click", (e) => {
-    const r = hud.bar.getBoundingClientRect();
-    jumpTo(((e.clientX - r.left) / r.width) * maxScroll);
   });
   const workIndex = $("[data-work-index]");
   const projectY = (i) => yForTime(3 + workTime(i, n));
@@ -212,46 +350,43 @@ async function startFilm() {
     const b = e.target.closest("[data-project]");
     if (b) jumpTo(projectY(+b.dataset.project));
   });
-  // keyboard: tabbing onto a project brings its screen into view
-  $$(".proj__link").forEach((a, i) => a.addEventListener("focus", () => {
-    if (Math.abs(sceneTime(window.scrollY) - 3 - workTime(i, n)) > workHalf(n) * 0.8) window.scrollTo(0, projectY(i));
-  }));
 
-  /* ---------- the 3D scene ---------- */
-  const coarse = window.matchMedia("(pointer: coarse)").matches;
-  const tier = coarse || window.innerWidth < 760 || (navigator.hardwareConcurrency || 8) <= 4 ? "low" : "high";
-  let scene;
-  try {
-    const { createScene } = await import("./scene.js");
-    scene = createScene({ canvas: $(".stage"), projects, asset, tier });
-  } catch (err) {
-    console.warn("3D scene unavailable, showing the static page instead.", err);
-    goStatic();
-    return;
-  }
-  $(".stage").addEventListener("webglcontextlost", (e) => { e.preventDefault(); goStatic(); });
-
-  measure();
-  window.addEventListener("resize", () => { measure(); scene.resize(); });
-  if (document.fonts) document.fonts.ready.then(measure);
-  new ResizeObserver(measure).observe(document.body);
+  // keyboard: when focus lands on something that is faded out (another
+  // chapter, another project), bring its chapter on screen
+  const shown = (el) => {
+    let a = 1;
+    for (let e = el; e && e !== root; e = e.parentElement) a *= parseFloat(getComputedStyle(e).opacity);
+    return a > 0.95;
+  };
+  document.addEventListener("focusin", (e) => {
+    if (!running) return;
+    const el = e.target;
+    const sec = el.closest?.("[data-chapter]");
+    if (!sec || shown(el)) return;
+    stop();
+    const proj = el.closest(".proj");
+    window.scrollTo(0, proj ? projectY(caps.indexOf(proj)) : landY(chapters.indexOf(sec)));
+    // cut straight there (no catch up) so the focused text shows at once
+    Ts = sceneTime(window.scrollY);
+    updateUI(Ts);
+  });
 
   /* ---------- pointer ---------- */
   const label = $(".pointer-label");
   const finePointer = window.matchMedia("(pointer: fine)").matches;
   let px = -1, py = -1, overScreen = -1;
   window.addEventListener("pointermove", (e) => {
+    if (!running) return;
     px = e.clientX; py = e.clientY;
     scene.setPointer((px / window.innerWidth) * 2 - 1, -((py / window.innerHeight) * 2 - 1));
     if (finePointer) { label.style.setProperty("--x", `${px}px`); label.style.setProperty("--y", `${py}px`); }
   }, { passive: true });
   window.addEventListener("click", (e) => {
-    if (overScreen < 0 || e.target.closest("a, button")) return;
+    if (!running || overScreen < 0 || e.target.closest("a, button, input")) return;
     window.open(projects[overScreen].url, "_blank", "noopener");
   });
 
   /* ---------- per-chapter UI ---------- */
-  const caps = $$(".proj");
   const indexBtns = $$("button", workIndex);
   const services = $$('[data-panels="services"] .panel');
   const dots = $$(".dots i");
@@ -287,7 +422,12 @@ async function startFilm() {
     const step = T > 5 && T < 6 ? Math.min(3, Math.floor(fill * 4)) : -1;
     if (step !== state.step) {
       state.step = step;
-      steps.forEach((el, k) => { el.classList.toggle("is-active", k === step); el.classList.toggle("is-done", step > -1 && k < step); });
+      steps.forEach((el, k) => {
+        el.classList.toggle("is-active", k === step);
+        el.classList.toggle("is-done", step > -1 && k < step);
+        if (k === step) el.setAttribute("aria-current", "step");
+        else el.removeAttribute("aria-current");
+      });
       dialNum.textContent = pad(Math.max(0, step) + 1);
     }
     if (T > 4.9 && T < 6.1) {
@@ -302,11 +442,12 @@ async function startFilm() {
   /* ---------- the loop ---------- */
   const lastP = chapters.map(() => -1);
   let last = performance.now(), time = 0;
-  let Ts = sceneTime(window.scrollY), lastY = window.scrollY, vel = 0;
+  let Ts = 0, lastY = 0, vel = 0;
   // adaptive resolution: if frames are slow, render fewer pixels
   let slowFrames = 0, frames = 0, cooldown = 2.5;
 
   function frame(now) {
+    if (!running) return;
     const dt = Math.min(0.1, Math.max(0.001, (now - last) / 1000));
     last = now;
     time += dt;
@@ -362,7 +503,14 @@ async function startFilm() {
     }
     const prog = y / maxScroll;
     hud.fill.style.setProperty("--progress", prog.toFixed(4));
-    hud.time.textContent = fmtTime(prog * DURATION);
+    const t = fmtTime(prog * DURATION);
+    hud.time.textContent = t;
+    if (!seeking) {
+      const sv = Math.round(prog * 1000);
+      if (sv !== lastSeek) { hud.seek.value = sv; lastSeek = sv; }
+    }
+    const seekText = `${chapters[k].dataset.chapter}, ${t} of ${fmtTime(DURATION)}`;
+    if (seekText !== lastSeekText) { hud.seek.setAttribute("aria-valuetext", seekText); lastSeekText = seekText; }
 
     // adaptive resolution
     cooldown -= dt;
@@ -375,11 +523,39 @@ async function startFilm() {
       }
     }
 
-    requestAnimationFrame(frame);
+    raf = requestAnimationFrame(frame);
   }
 
-  scene.update(Ts, 0, 0.016, 0);
-  updateUI(Ts);
-  requestAnimationFrame(() => root.classList.add("is-ready"));
-  requestAnimationFrame(frame);
+  window.addEventListener("resize", () => { if (running) { measure(); scene.resize(); } });
+  document.fonts?.ready.then(() => running && measure());
+  new ResizeObserver(() => running && measure()).observe(document.body);
+
+  return {
+    fits,
+    chapter: () => clamp(Math.floor(sceneTime(window.scrollY)), 0, chapters.length - 1),
+    // start (or restart) the film; k is a chapter to open on, null keeps the scroll position
+    resume(k) {
+      measure();
+      scene.resize();
+      if (k != null) window.scrollTo(0, landY(k));
+      Ts = sceneTime(window.scrollY);
+      lastY = window.scrollY;
+      last = performance.now();
+      lastP.fill(-1);
+      state.chapter = -1;
+      running = true;
+      scene.update(Ts, time, 0.016, 0);
+      updateUI(Ts);
+      requestAnimationFrame(() => running && root.classList.add("is-ready"));
+      raf = requestAnimationFrame(frame);
+    },
+    pause() {
+      running = false;
+      cancelAnimationFrame(raf);
+      stop();
+      overScreen = -1;
+      chapters.forEach((c) => c.classList.remove("is-current"));
+      root.classList.remove("is-ready", "is-over-screen");
+    },
+  };
 }
