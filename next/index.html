@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>TENELEVENMEDIA | Design that moves</title>
+  <meta name="description" content="TENELEVENMEDIA is an independent web design studio crafting bold, fluid, unforgettable websites. Scroll to play the film." />
+  <!-- preview of the next site: keep it out of search results until it replaces the homepage -->
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#0c0c0d" />
+
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" />
+  <link rel="modulepreload" href="../vendor/three/three.core.min.js" />
+  <link rel="modulepreload" href="../vendor/three/three.module.min.js" />
+  <link rel="stylesheet" href="style.css" />
+
+  <script>
+    (function (h) {
+      h.classList.replace("no-js", "js");
+      var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var gl = false;
+      // three.js needs WebGL 2
+      try { gl = !!document.createElement("canvas").getContext("webgl2"); } catch (e) {}
+      h.classList.add(still || !gl ? "static" : "film");
+    })(document.documentElement);
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <canvas class="stage" aria-hidden="true"></canvas>
+  <div class="fx" aria-hidden="true"><div class="fx__vignette"></div><div class="fx__grain"></div></div>
+
+  <!-- ============ NAV ============ -->
+  <header class="nav">
+    <a href="#top" class="nav__logo" data-jump aria-label="TENELEVENMEDIA, back to the start">TENELEVENMEDIA</a>
+    <p class="nav__status mono"><span class="pulse"></span>Booking new projects</p>
+    <nav class="nav__links mono" aria-label="Chapters">
+      <a href="#work" data-jump>Work</a>
+      <a href="#services" data-jump>Services</a>
+      <a href="#process" data-jump>Process</a>
+      <a href="#contact" data-jump class="nav__cta">Contact</a>
+    </nav>
+  </header>
+
+  <!-- ============ HUD: the film's timeline ============ -->
+  <div class="hud mono" aria-label="Film controls">
+    <button class="hud__play" type="button" data-play aria-pressed="false">
+      <span class="hud__icon" aria-hidden="true"><i></i><i></i></span>
+      <span class="hud__play-label">Play</span>
+    </button>
+    <p class="hud__chapter" aria-live="off"><span data-hud-num>00</span><span data-hud-name>Intro</span></p>
+    <div class="hud__bar" data-hud-bar>
+      <i class="hud__fill" data-hud-fill></i>
+    </div>
+    <p class="hud__time"><span data-hud-time>00:00</span> / <span data-hud-total>01:11</span></p>
+  </div>
+
+  <div class="pointer-label mono" aria-hidden="true">Visit <span>↗</span></div>
+
+  <main id="main">
+    <!-- ============ 0 INTRO ============ -->
+    <section class="ch ch--hero" id="top" data-chapter="Intro" style="--len: 230">
+      <div class="ch__sticky">
+        <div class="hero">
+          <div class="hero__top">
+            <p class="mono hero__eyebrow">(Independent web design studio)</p>
+            <p class="hero__lede">We design and build <em>bold</em>, fluid, unforgettable websites for brands, artists &amp; businesses that refuse to blend in.</p>
+          </div>
+          <div class="hero__bottom">
+            <h1 class="hero__title">
+              <span class="sr-only">TENELEVENMEDIA. </span>
+              <span class="line"><span>Design</span></span>
+              <span class="line"><span>that <em>moves.</em></span></span>
+            </h1>
+            <div class="hero__cta">
+              <button class="play-btn" type="button" data-play>
+                <span class="play-btn__icon" aria-hidden="true"></span>
+                <span>Play the film</span>
+              </button>
+              <p class="mono hero__hint">or scroll to explore <i class="arrow-down"></i></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 1 STUDIO ============ -->
+    <section class="ch ch--about" id="about" data-chapter="Studio" style="--len: 260">
+      <div class="ch__sticky">
+        <div class="about">
+          <p class="label mono"><span class="label__num">(01)</span> The studio</p>
+          <p class="about__text" data-words>
+            TENELEVENMEDIA is an independent studio blending a designer's eye, an engineer's precision and a musician's sense of <em>rhythm</em> to craft websites that look stunning, move beautifully, load fast and stay secure.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 2 RHYTHM ============ -->
+    <section class="ch ch--rhythm" id="rhythm" data-chapter="Rhythm" style="--len: 240">
+      <div class="ch__sticky">
+        <div class="rhythm">
+          <div class="rhythm__head">
+            <p class="label mono"><span class="label__num">(02)</span> How we work</p>
+            <h2 class="title">Every pixel, <em>in rhythm.</em></h2>
+          </div>
+          <div class="rhythm__cols">
+            <div class="rhythm__col" style="--d: 0">
+              <span class="mono"><b>01</b> Design</span>
+              <p>No templates. Every page is art directed from a blank canvas around your brand, your audience and your goals.</p>
+            </div>
+            <div class="rhythm__col" style="--d: 1">
+              <span class="mono"><b>02</b> Engineering</span>
+              <p>Built by hand, responsive and obsessed with performance, with an IT &amp; cybersecurity background baked into every launch.</p>
+            </div>
+            <div class="rhythm__col" style="--d: 2">
+              <span class="mono"><b>03</b> Motion</span>
+              <p>Storytelling that unfolds as you scroll, plus fluid microinteractions that make people stop, explore and remember you.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 3 WORK ============ -->
+    <section class="ch ch--work" id="work" data-chapter="Selected work" style="--len: 640">
+      <div class="ch__sticky">
+        <div class="work">
+          <div class="work__head">
+            <p class="label mono"><span class="label__num">(03)</span> Selected work</p>
+            <h2 class="title work__title">Selected <em>work</em> <sup class="mono" data-count></sup></h2>
+            <p class="work__hint mono">Keep scrolling to fly through recent launches</p>
+          </div>
+          <!-- one entry per project, built from js/projects.js -->
+          <ol class="work__list" data-work></ol>
+          <ol class="work__index mono" data-work-index aria-hidden="true"></ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 4 SERVICES ============ -->
+    <section class="ch ch--services" id="services" data-chapter="Services" style="--len: 340">
+      <div class="ch__sticky">
+        <div class="split">
+          <div class="split__text">
+            <p class="label mono"><span class="label__num">(04)</span> Services</p>
+            <ol class="panels" data-panels="services">
+              <li class="panel">
+                <span class="panel__num mono">01 / 04</span>
+                <h3 class="panel__title">Web <em>design</em></h3>
+                <p>Bespoke design built to convert, crafted from a blank canvas and never from a template. Every layout, interaction and detail is made for your brand.</p>
+                <ul class="tags mono"><li>UI / UX</li><li>Wireframes</li><li>Prototyping</li><li>Art direction</li><li>Responsive</li></ul>
+              </li>
+              <li class="panel">
+                <span class="panel__num mono">02 / 04</span>
+                <h3 class="panel__title">Develop<em>ment</em></h3>
+                <p>Lightning fast sites built by hand, with smooth motion and clean, accessible code. Built to rank, built to scale, built to last.</p>
+                <ul class="tags mono"><li>Frontend</li><li>CMS</li><li>Ecommerce</li><li>Animation</li><li>Performance</li></ul>
+              </li>
+              <li class="panel">
+                <span class="panel__num mono">03 / 04</span>
+                <h3 class="panel__title">Brand<em>ing</em></h3>
+                <p>Logos, type, colour and graphic systems that give your business a visual voice people recognise instantly, online and off.</p>
+                <ul class="tags mono"><li>Logo design</li><li>Identity</li><li>Graphic design</li><li>Social assets</li></ul>
+              </li>
+              <li class="panel">
+                <span class="panel__num mono">04 / 04</span>
+                <h3 class="panel__title">Launch <em>&amp; care</em></h3>
+                <p>Secure hosting, SEO, analytics and ongoing maintenance, backed by real IT &amp; cybersecurity experience so your site stays fast and safe.</p>
+                <ul class="tags mono"><li>Hosting</li><li>SEO</li><li>Security hardening</li><li>Maintenance</li></ul>
+              </li>
+            </ol>
+            <div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 5 PROCESS ============ -->
+    <section class="ch ch--process" id="process" data-chapter="Process" style="--len: 300">
+      <div class="ch__sticky">
+        <div class="split">
+          <div class="split__text">
+            <p class="label mono"><span class="label__num">(05)</span> Process</p>
+            <h2 class="title process__title">From first call to <em>launch.</em></h2>
+            <ol class="steps" data-panels="steps">
+              <li class="step"><span class="mono">01</span><div><h3>Discover</h3><p>We dig into your goals, audience and competition to define what success looks like and what makes you different.</p></div></li>
+              <li class="step"><span class="mono">02</span><div><h3>Design</h3><p>Moodboards, wireframes and high fidelity designs, refined together until every pixel feels right.</p></div></li>
+              <li class="step"><span class="mono">03</span><div><h3>Develop</h3><p>Coded by hand, responsive and animated, then tested on every screen size and browser that matters.</p></div></li>
+              <li class="step"><span class="mono">04</span><div><h3><em>Launch</em></h3><p>Secure deployment, SEO and analytics. Your new site is live and ready to make noise.</p></div></li>
+            </ol>
+          </div>
+        </div>
+        <div class="dial-label" aria-hidden="true">
+          <span class="dial-label__num" data-dial-num>01</span>
+          <span class="dial-label__pct mono" data-dial-pct>0%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 6 CONTACT ============ -->
+    <section class="ch ch--contact" id="contact" data-chapter="Contact" style="--len: 220">
+      <div class="ch__sticky">
+        <div class="contact">
+          <p class="label mono"><span class="label__num">(06)</span> Got a project in mind?</p>
+          <a class="contact__cta" data-email-link href="#">
+            <span class="contact__line">Let's make</span>
+            <span class="contact__gap" aria-hidden="true"></span>
+            <span class="contact__line"><em>something</em> loud.</span>
+          </a>
+          <div class="contact__row">
+            <dl class="contact__meta">
+              <div><dt class="mono">Email</dt><dd><a class="link-underline" data-email href="#"></a></dd></div>
+              <div><dt class="mono">Studio time</dt><dd data-clock>--:--</dd></div>
+              <div data-socials-wrap hidden><dt class="mono">Socials</dt><dd><ul class="contact__socials" data-socials></ul></dd></div>
+            </dl>
+            <a class="btn-round" data-email-link href="#"><span>Start a<br />project</span></a>
+            <div class="contact__legal mono">
+              <span>&copy; <span data-year></span> TENELEVENMEDIA</span>
+              <span>Designed &amp; built in house</span>
+              <a href="#top" class="link-underline" data-jump>Replay from the top ↑</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/projects.js"></script>
+  <script src="../js/screenshots.js"></script>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
