@@ -42,8 +42,21 @@ There's a timeline along the bottom like a video player: click it to jump, or pr
 
 - **Projects** come from the same `js/projects.js` and screenshots as the homepage, so there's nothing extra to update.
 - **Phones and slower machines** get fewer particles and a lower resolution automatically, and the resolution drops further if frames start running slow.
-- **Reduced motion** (or a browser without WebGL 2) gets a plain, static version of the same content with a grid of project screenshots.
 - **Tuning:** `DURATION` (Play length) and `FOLLOW` (how quickly the 3D catches up with the scrollbar) are at the top of `next/main.js`. The camera path, colours and timing for each chapter are keyframes in `build()` in `next/scene.js`.
+
+### Accessibility (WCAG 2.2 AA)
+
+The preview is built to meet WCAG 2.2 level AA, the standard ADA claims are usually measured against:
+
+- **Motion switch** in the nav turns the 3D off (or on) for anyone, and the choice is remembered. Without a choice, the system *reduce motion* setting decides. With motion off, the same content shows as a still page that scrolls normally, with a grid of project screenshots.
+- **Zoom and small windows:** if the film's layout doesn't fit (200% zoom, phone in landscape, very short windows), the page switches to the still version automatically, so nothing is clipped and nothing scrolls sideways.
+- **Keyboard:** every link and control is reachable with Tab and shows a focus ring. Focusing something in a faded out chapter brings that chapter on screen. The timeline is a real slider (arrow keys, Page Up/Down) and Play can be paused.
+- **Screen readers:** one `h1`, an `h2` for every chapter, the studio paragraph read as one sentence, links that say where they go and that they open a new tab, and the 3D canvas hidden from assistive tech.
+- **Contrast:** all text meets 4.5:1 (3:1 for large text), measured against the pixels actually rendered behind it, including the 3D. Small orange text uses the lighter `--accent-text`, and text over the film has a soft dark halo.
+
+**How it was checked:** axe-core (WCAG 2.0, 2.1 and 2.2 A/AA rules) at every chapter on desktop and phone, in the film and the still page; a contrast check of every visible piece of text against a screenshot of what's behind it; a Tab walk confirming each stop is visible, unobscured and ringed; zoom/reflow at 320px wide, 200% and 400%; and tests of the Motion switch, the remembered setting and the slider. All passed with zero failures. Automated tools can't cover everything, so before advertising formal compliance have it tested with VoiceOver and NVDA by a person (ideally an outside audit).
+
+When editing: keep new text above 4.5:1 (use `--bone-dim` or brighter for small grey text, `--accent-text` for small orange text), and don't hide content behind `opacity: 0` without checking it with the keyboard.
 
 To make it the homepage, move the contents of `next/` to the root (fixing the `../` paths) or point the root `index.html` at it, and remove the `noindex` tag.
 

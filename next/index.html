@@ -18,13 +18,18 @@
   <link rel="stylesheet" href="style.css" />
 
   <script>
+    // Pick the film or the static page before anything paints. The film needs
+    // WebGL 2, a screen big enough for its layout, and a reader who wants
+    // motion: the Motion switch in the nav, else the system reduce motion setting.
     (function (h) {
       h.classList.replace("no-js", "js");
-      var still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      var gl = false;
-      // three.js needs WebGL 2
+      var pref = null, gl = false;
+      try { pref = localStorage.getItem("tm-motion"); } catch (e) {}
       try { gl = !!document.createElement("canvas").getContext("webgl2"); } catch (e) {}
-      h.classList.add(still || !gl ? "static" : "film");
+      var motion = pref ? pref === "on" : !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var roomy = window.innerWidth >= 320 && window.innerHeight >= 500;
+      h.dataset.gl = gl ? "1" : "0";
+      h.classList.add(motion && gl && roomy ? "film" : "static");
     })(document.documentElement);
   </script>
 </head>
@@ -38,30 +43,38 @@
   <header class="nav">
     <a href="#top" class="nav__logo" data-jump aria-label="TENELEVENMEDIA, back to the start">TENELEVENMEDIA</a>
     <p class="nav__status mono"><span class="pulse"></span>Booking new projects</p>
-    <nav class="nav__links mono" aria-label="Chapters">
-      <a href="#work" data-jump>Work</a>
-      <a href="#services" data-jump>Services</a>
-      <a href="#process" data-jump>Process</a>
-      <a href="#contact" data-jump class="nav__cta">Contact</a>
-    </nav>
+    <div class="nav__end">
+      <nav class="nav__links mono" aria-label="Chapters">
+        <a href="#work" data-jump>Work</a>
+        <a href="#services" data-jump>Services</a>
+        <a href="#process" data-jump>Process</a>
+        <a href="#contact" data-jump class="nav__cta">Contact</a>
+      </nav>
+      <button class="motion mono" type="button" role="switch" aria-checked="false" data-motion>
+        <span>Motion</span>
+        <span class="motion__track" aria-hidden="true"><span class="motion__knob"></span></span>
+      </button>
+    </div>
   </header>
+  <p class="sr-only" role="status" data-status></p>
 
   <!-- ============ HUD: the film's timeline ============ -->
-  <div class="hud mono" aria-label="Film controls">
-    <button class="hud__play" type="button" data-play aria-pressed="false">
+  <div class="hud mono" role="group" aria-label="Film controls">
+    <button class="hud__play" type="button" data-play data-state="paused" aria-label="Play the film">
       <span class="hud__icon" aria-hidden="true"><i></i><i></i></span>
-      <span class="hud__play-label">Play</span>
+      <span class="hud__play-label" aria-hidden="true">Play</span>
     </button>
-    <p class="hud__chapter" aria-live="off"><span data-hud-num>00</span><span data-hud-name>Intro</span></p>
+    <p class="hud__chapter"><span data-hud-num>00</span><span data-hud-name>Intro</span></p>
     <div class="hud__bar" data-hud-bar>
       <i class="hud__fill" data-hud-fill></i>
+      <input class="hud__seek" type="range" min="0" max="1000" step="10" value="0" aria-label="Film position" data-seek />
     </div>
     <p class="hud__time"><span data-hud-time>00:00</span> / <span data-hud-total>01:11</span></p>
   </div>
 
   <div class="pointer-label mono" aria-hidden="true">Visit <span>↗</span></div>
 
-  <main id="main">
+  <main id="main" tabindex="-1">
     <!-- ============ 0 INTRO ============ -->
     <section class="ch ch--hero" id="top" data-chapter="Intro" style="--len: 230">
       <div class="ch__sticky">
@@ -77,7 +90,7 @@
               <span class="line"><span>that <em>moves.</em></span></span>
             </h1>
             <div class="hero__cta">
-              <button class="play-btn" type="button" data-play>
+              <button class="play-btn" type="button" data-play data-state="paused">
                 <span class="play-btn__icon" aria-hidden="true"></span>
                 <span>Play the film</span>
               </button>
@@ -92,7 +105,7 @@
     <section class="ch ch--about" id="about" data-chapter="Studio" style="--len: 260">
       <div class="ch__sticky">
         <div class="about">
-          <p class="label mono"><span class="label__num">(01)</span> The studio</p>
+          <h2 class="label mono"><span class="label__num">(01)</span> The studio</h2>
           <p class="about__text" data-words>
             TENELEVENMEDIA is an independent studio blending a designer's eye, an engineer's precision and a musician's sense of <em>rhythm</em> to craft websites that look stunning, move beautifully, load fast and stay secure.
           </p>
@@ -147,7 +160,7 @@
       <div class="ch__sticky">
         <div class="split">
           <div class="split__text">
-            <p class="label mono"><span class="label__num">(04)</span> Services</p>
+            <h2 class="label mono"><span class="label__num">(04)</span> Services</h2>
             <ol class="panels" data-panels="services">
               <li class="panel">
                 <span class="panel__num mono">01 / 04</span>
@@ -206,7 +219,7 @@
     <section class="ch ch--contact" id="contact" data-chapter="Contact" style="--len: 220">
       <div class="ch__sticky">
         <div class="contact">
-          <p class="label mono"><span class="label__num">(06)</span> Got a project in mind?</p>
+          <h2 class="label mono"><span class="label__num">(06)</span> Got a project in mind?</h2>
           <a class="contact__cta" data-email-link href="#">
             <span class="contact__line">Let's make</span>
             <span class="contact__gap" aria-hidden="true"></span>
@@ -218,7 +231,7 @@
               <div><dt class="mono">Studio time</dt><dd data-clock>--:--</dd></div>
               <div data-socials-wrap hidden><dt class="mono">Socials</dt><dd><ul class="contact__socials" data-socials></ul></dd></div>
             </dl>
-            <a class="btn-round" data-email-link href="#"><span>Start a<br />project</span></a>
+            <a class="btn-round" data-email-link href="#"><span>Start a<br />project<span class="sr-only"> by email</span></span></a>
             <div class="contact__legal mono">
               <span>&copy; <span data-year></span> TENELEVENMEDIA</span>
               <span>Designed &amp; built in house</span>
