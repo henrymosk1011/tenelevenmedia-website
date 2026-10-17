@@ -4,29 +4,7 @@ Portfolio site for the TENELEVENMEDIA web design studio. It's a static site (pla
 
 ## What's on the page
 
-| Section | Motion |
-| --- | --- |
-| **Hero** | Plays its entrance animation as soon as the page loads (there's no loading screen). WebGL liquid gradient that follows the cursor, a giant `TENELEVEN` wordmark, and a rotating badge that scrolls you down when clicked. The hero pins while the next section slides over it |
-| **About** | The paragraph lights up word by word as you scroll |
-| **Marquee** | Two crossing tape bands that loop forever, speed up as you scroll and reverse when you scroll back |
-| **Selected work** | Pinned **horizontal scroll** gallery. Cards skew with scroll speed, screenshots shift inside their frames, and hovering a card scrolls through the full-page screenshot |
-| **Services** | Sticky cards that stack on top of each other, shrinking and dimming as the next one arrives |
-| **Big type** | Huge rows of text that slide sideways in opposite directions as you scroll |
-| **Process** | Pinned section with a dial: the ring fills, a marker lights up and the big step number rolls over for each of the four steps, ending on **Live** |
-| **Index** | A list of every project. A floating preview follows the cursor |
-| **Contact** | Footer revealed from behind the page with a second liquid gradient, a magnetic "Start a project" button and the current studio time |
-
-Throughout the site: a "Visit ↗" label that appears next to the pointer over projects, magnetic buttons, a full-screen menu that opens as a circle, film grain, and a nav that hides as you scroll down.
-
-**Scrolling and the mouse respond instantly.** The site uses the browser's own scrolling (no smooth-scroll library), every scroll animation is tied directly to the scroll position with no catch-up delay, and the normal system cursor is never hidden or replaced.
-
-**Accessibility:** if someone has *reduce motion* turned on in their system settings, the site switches off the pinning, scroll animation and WebGL animation. The gallery becomes a normal swipeable row and the process dial is shown complete. Keyboard focus is visible, and there's a skip link.
-
-## The 3D preview (`/next/`)
-
-`next/` holds a second, separate version of the site that plays like a film as you scroll: **www.tenelevenmedia.com/next/**. The homepage above is untouched; nothing links to the preview and it's marked `noindex`, so it stays out of search results until you decide to use it.
-
-One fixed WebGL canvas (Three.js) sits behind the page, and the scroll position drives a camera through seven chapters:
+The homepage plays like a film as you scroll. One fixed WebGL canvas (Three.js) sits behind the page, and the scroll position drives a camera through seven chapters:
 
 | Chapter | What plays |
 | --- | --- |
@@ -38,27 +16,43 @@ One fixed WebGL canvas (Three.js) sits behind the page, and the scroll position 
 | **Process** | A dial that fills step by step and lands on **Live** |
 | **Contact** | The core re-forms, molten orange, between the two lines of "Let's make something loud." |
 
-There's a timeline along the bottom like a video player: click it to jump, or press **Play** and the page scrolls itself through the whole film (about 71 seconds). Any scroll, swipe or key press hands control back. The menu links fast forward to their chapter.
+There's a timeline along the bottom like a video player: drag or click it to jump, or press **Play** and the page scrolls itself through the whole film (about 71 seconds). Any scroll, swipe or key press hands control back. The menu links fast forward to their chapter.
 
-- **Projects** come from the same `js/projects.js` and screenshots as the homepage, so there's nothing extra to update.
+- **Scrolling** is the browser's own (no smooth-scroll library). Text is tied straight to the scrollbar; the 3D catches up over about a tenth of a second so it moves fluidly.
 - **Phones and slower machines** get fewer particles and a lower resolution automatically, and the resolution drops further if frames start running slow.
-- **Tuning:** `DURATION` (Play length) and `FOLLOW` (how quickly the 3D catches up with the scrollbar) are at the top of `next/main.js`. The camera path, colours and timing for each chapter are keyframes in `build()` in `next/scene.js`.
+- **Tuning:** `DURATION` (Play length) and `FOLLOW` (how quickly the 3D catches up with the scrollbar) are at the top of `js/main.js`. The camera path, colours and timing for each chapter are keyframes in `build()` in `js/scene.js`.
 
 ### Accessibility (WCAG 2.2 AA)
 
-The preview is built to meet WCAG 2.2 level AA, the standard ADA claims are usually measured against:
+The site is built to meet WCAG 2.2 level AA, the standard ADA claims are usually measured against:
 
-- **Motion switch** in the nav turns the 3D off (or on) for anyone, and the choice is remembered. Without a choice, the system *reduce motion* setting decides. With motion off, the same content shows as a still page that scrolls normally, with a grid of project screenshots.
+- **Motion switch** in the nav turns the 3D off (or on) for anyone, and the choice is remembered. Without a choice, the system *reduce motion* setting decides. With motion off, the same content shows as a still page that scrolls normally, with a grid of project screenshots. Browsers without WebGL 2 get the still page too.
 - **Zoom and small windows:** if the film's layout doesn't fit (200% zoom, phone in landscape, very short windows), the page switches to the still version automatically, so nothing is clipped and nothing scrolls sideways.
 - **Keyboard:** every link and control is reachable with Tab and shows a focus ring. Focusing something in a faded out chapter brings that chapter on screen. The timeline is a real slider (arrow keys, Page Up/Down) and Play can be paused.
 - **Screen readers:** one `h1`, an `h2` for every chapter, the studio paragraph read as one sentence, links that say where they go and that they open a new tab, and the 3D canvas hidden from assistive tech.
 - **Contrast:** all text meets 4.5:1 (3:1 for large text), measured against the pixels actually rendered behind it, including the 3D. Small orange text uses the lighter `--accent-text`, and text over the film has a soft dark halo.
 
-**How it was checked:** axe-core (WCAG 2.0, 2.1 and 2.2 A/AA rules) at every chapter on desktop and phone, in the film and the still page; a contrast check of every visible piece of text against a screenshot of what's behind it; a Tab walk confirming each stop is visible, unobscured and ringed; zoom/reflow at 320px wide, 200% and 400%; and tests of the Motion switch, the remembered setting and the slider. All passed with zero failures. Automated tools can't cover everything, so before advertising formal compliance have it tested with VoiceOver and NVDA by a person (ideally an outside audit).
+**How it was checked:** axe-core (WCAG 2.0, 2.1 and 2.2 A/AA rules) at every chapter on desktop and phone, in the film and the still page; a contrast check of every visible piece of text against a screenshot of what's behind it; a Tab walk confirming each stop is visible, unobscured and ringed; zoom/reflow at 320px wide, 200% and 400%; and tests of the Motion switch, the remembered setting and the slider. All passed. Automated tools can't cover everything, so before advertising formal compliance have it tested with VoiceOver and NVDA by a person (ideally an outside audit).
 
 When editing: keep new text above 4.5:1 (use `--bone-dim` or brighter for small grey text, `--accent-text` for small orange text), and don't hide content behind `opacity: 0` without checking it with the keyboard.
 
-To make it the homepage, move the contents of `next/` to the root (fixing the `../` paths) or point the root `index.html` at it, and remove the `noindex` tag.
+## Version 1 (`/v1/`, password protected)
+
+The previous design (GSAP horizontal gallery, liquid gradient hero, stacking service cards) is kept at **www.tenelevenmedia.com/v1/** behind a password. It still loads the current `js/projects.js` and screenshots, so it always shows today's project list.
+
+The page is encrypted, not just hidden: `v1/index.html` holds version 1 as AES-256-GCM encrypted data (key from the password via PBKDF2, 600,000 rounds) plus a small unlock form, and the browser decrypts it only when the right password is entered. The password is never stored anywhere.
+
+To change the password (or rebuild after changing the shared files version 1 uses):
+
+```bash
+PASSWORD='your new password' npm run lock-v1
+```
+
+then commit the new `v1/index.html`. Use at least 12 characters (a long passphrase is best). The script rebuilds version 1 from git commit `4140d2b`, the last commit where it was the homepage.
+
+Keep in mind: this keeps version 1 off the public site and out of search engines, but its source code is still in this repository's git history, which anyone can browse while the repository is public. For real privacy, make the repository private (GitHub Pages from a private repo needs a paid GitHub plan).
+
+The old preview address `/next/` now redirects to the homepage.
 
 ## Adding your projects
 
@@ -84,7 +78,7 @@ window.PROJECTS = [
 ];
 ```
 
-The horizontal gallery, the project count, the index list and the cursor previews are all built from this list.
+The project screens, captions, the project count and the 01 to 09 index are all built from this list.
 
 ## Screenshots of each site
 
@@ -100,7 +94,7 @@ npm run shots -- --only client-name --stitch   # if a capture has blank gaps (se
 npm run shots -- --only client-name --reduced-motion   # if a site pins sections (see below)
 ```
 
-This saves JPEGs to `assets/work/` and writes `js/screenshots.js`, which the site picks up automatically. Full-page captures (up to 4800px tall by default) scroll inside the browser frame when you hover a card. Each capture also gets a `-poster.jpg` copy cropped to the top of the page: the cards show that light image, and the full-length one loads only while a card is hovered, which keeps the gallery smooth.
+This saves JPEGs to `assets/work/` and writes `js/screenshots.js`, which the site picks up automatically. Each capture also gets a `-poster.jpg` copy cropped to the top of the page: the 3D screens show that light image, and on desktops the full-page capture (up to 4800px tall by default) loads as the camera approaches and scrolls inside the screen as you fly past.
 
 Some sites, often Webflow builds, hide sections again once you scroll past them, so those sections come out blank in a full-page capture. `--stitch` fixes that by capturing one screen at a time and joining them.
 
@@ -143,7 +137,7 @@ Then in GitHub → Settings → Pages, confirm the custom domain reads `www.tene
 
 ## Customising
 
-- **Colours:** the CSS variables at the top of `css/style.css` (`--ink`, `--bone`, `--accent`, `--violet`). The liquid gradient colours are passed into `new Fluid(...)` in `js/main.js`.
+- **Colours:** the CSS variables at the top of `css/style.css` (`--ink`, `--bone`, `--accent`, `--violet`, `--accent-text`). The 3D colours are in `PAL` at the top of `js/scene.js`, and each chapter's particle and sky colours are keyframes in `build()`.
 - **Fonts:** [Geist](https://fonts.google.com/specimen/Geist) for display and body, [Instrument Serif](https://fonts.google.com/specimen/Instrument+Serif) for italic accents, and [JetBrains Mono](https://fonts.google.com/specimen/JetBrains+Mono) for labels. They're loaded from Google Fonts in `index.html`. To try another typeface, change the family in that `<link>` and the `--f-display` variable in `css/style.css`.
 - **Copy:** all text lives in `index.html`. The site copy is written without dashes, so keep it that way when editing, including in project categories.
 
@@ -154,13 +148,17 @@ index.html            page markup and copy
 css/style.css         all styles
 js/projects.js        ← your projects, email, socials
 js/screenshots.js     auto-generated screenshot map
-js/main.js            animations and interactions
-js/fluid.js           WebGL liquid gradient
-vendor/               GSAP 3.13 + ScrollTrigger, Three.js 0.185 (self-hosted)
-next/                 the 3D scroll film preview (see above)
+js/main.js            scroll, timeline, Motion switch, chapter text
+js/scene.js           the 3D film (Three.js scene, shaders, camera keyframes)
+js/timeline.js        timing shared by the page and the 3D
+vendor/three/         Three.js 0.185 (self-hosted)
+vendor/gsap*.js       GSAP 3.13 + ScrollTrigger, used by version 1
+v1/index.html         version 1, encrypted (built by scripts/lock-v1.mjs)
+next/index.html       redirect from the old preview address
 scripts/screenshot.mjs  Playwright screenshot capture
+scripts/lock-v1.mjs   builds the password protected version 1
 assets/               favicon, project screenshots
 CNAME                 custom domain for GitHub Pages
 ```
 
-GSAP is used under the [GreenSock standard license](https://gsap.com/standard-license) (free, including for commercial sites).
+Three.js is MIT licensed. GSAP is used under the [GreenSock standard license](https://gsap.com/standard-license) (free, including for commercial sites).
