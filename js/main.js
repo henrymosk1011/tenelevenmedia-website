@@ -252,8 +252,8 @@ async function startFilm() {
     if (!roomy()) return false;
     const over = (el) => el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 2;
     if ($$(".hero, .about, .rhythm, .split, .contact").some(over)) return false;
-    const css = getComputedStyle(root);
-    const room = window.innerHeight - parseFloat(css.getPropertyValue("--nav-h")) - parseFloat(css.getPropertyValue("--hud-h"));
+    // the timeline bar is hidden on phones; leave a small margin there instead
+    const room = window.innerHeight - $(".nav").offsetHeight - ($(".hud").offsetHeight || 16);
     if (caps.some((c) => c.offsetHeight > room - 16)) return false;
     const cta = $(".contact__cta").getBoundingClientRect();
     const row = $(".contact__row").getBoundingClientRect();
@@ -363,10 +363,12 @@ async function startFilm() {
     if (!sec || shown(el)) return;
     stop();
     const proj = el.closest(".proj");
-    window.scrollTo(0, proj ? projectY(caps.indexOf(proj)) : landY(chapters.indexOf(sec)));
+    const y = proj ? projectY(caps.indexOf(proj)) : landY(chapters.indexOf(sec));
     // cut straight there (no catch up) so the focused text shows at once
-    Ts = sceneTime(window.scrollY);
-    updateUI(Ts);
+    const go = () => { window.scrollTo(0, y); Ts = sceneTime(window.scrollY); updateUI(Ts); };
+    go();
+    // the browser scrolls the focused element into view after this event; land on the chapter again
+    setTimeout(go, 0);
   });
 
   /* ---------- pointer ---------- */
