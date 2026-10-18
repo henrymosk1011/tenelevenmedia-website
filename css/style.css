@@ -289,7 +289,11 @@ main { position: relative; z-index: 2; }
   display: grid; gap: 1.2rem;
   --hv: clamp(0, (0.075 - var(--p)) * 30, 1);
 }
-.work__intro { display: grid; gap: 1.2rem; opacity: var(--hv); transform: translate3d(0, calc((1 - var(--hv)) * -20px), 0); }
+/* the title stays up for the whole chapter so the floating screens read as "Selected work" */
+.work__intro { display: grid; gap: 1.2rem; }
+.work__title { font-size: clamp(2.4rem, 5vw, 5.4rem); }
+/* the hint is only needed until the first project arrives */
+.work__hint { opacity: var(--hv); }
 .work__title sup { font-size: 0.2em; vertical-align: top; position: relative; top: 0.6em; margin-left: 0.3em; color: var(--accent-text); letter-spacing: 0.04em; }
 .work__hint { color: var(--bone-dim); }
 
@@ -449,7 +453,8 @@ main { position: relative; z-index: 2; }
    Phones and narrow screens
    ========================================================================== */
 @media (max-width: 860px) {
-  :root { --nav-h: 64px; --hud-h: 56px; }
+  :root { --nav-h: 64px; --hud-h: max(16px, env(safe-area-inset-bottom, 0px)); }
+  .hud { display: none; }
   .nav { grid-template-columns: 1fr auto; }
   .nav__status { display: none; }
   .nav__links a:not(.nav__cta) { display: none; }
@@ -478,6 +483,7 @@ main { position: relative; z-index: 2; }
     width: auto; transform: none; text-align: left;
   }
   .proj[data-side="right"] .proj__link { justify-items: start; }
+  .proj__link::before { inset: -18% -6% -6%; }
   .proj__link { gap: 0.6rem; }
   .work__index { top: auto; bottom: calc(var(--hud-h) - 6px); left: var(--gutter); right: auto; flex-wrap: wrap; }
   .work__index button { padding: 4px 5px; }
@@ -485,7 +491,7 @@ main { position: relative; z-index: 2; }
   .work__head { right: var(--gutter); }
 
   .split { align-items: flex-end; }
-  .split__text { width: 100%; }
+  .split__text, .ch--process .split__text { width: 100%; }
   .panel__title { font-size: clamp(2.6rem, 13vw, 4.4rem); }
   .panel p { font-size: 0.95rem; }
   .process__title { font-size: clamp(1.7rem, 7.5vw, 2.6rem); }
@@ -536,7 +542,6 @@ html.static { scroll-padding-top: calc(var(--nav-h) + 1rem); }
 .static .rhythm__head, .static .rhythm__col { transform: none; opacity: 1; }
 .static .work { padding-block: 10vh; }
 .static .work__head { position: static; margin-bottom: 3rem; }
-.static .work__intro { opacity: 1; transform: none; }
 .static .work__hint { display: none; }
 .static .work__list { position: static; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 2.5rem 1.5rem; }
 .static .proj, .static .proj[data-side="right"] { position: static; width: auto; transform: none; text-align: left; pointer-events: auto; }
