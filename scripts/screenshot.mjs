@@ -8,7 +8,8 @@
 
    Options:
      --only <slug>        capture just one project (slug = lower-case title,
-                          spaces → dashes, e.g. "project-one")
+                          spaces → dashes, e.g. "project-one"), or several
+                          separated by commas: --only one,two
      --max-height <px>    tallest capture in px (default 4800). Tall captures
                           scroll inside the browser frame on hover.
      --viewport           capture only the first screen (1440×900)
@@ -18,6 +19,12 @@
      --reduced-motion     load the site with "reduce motion" turned on. Use it
                           for sites with pinned sections, which come out blank
                           in a full-page capture and doubled when stitched.
+     --report <file>      also write which projects were captured and which
+                          failed, as JSON (used by scripts/sync-portfolio.mjs)
+
+   A project can ask for --stitch and/or --reduced-motion itself with
+   capture: "stitch", "reduced-motion" or "stitch-reduced-motion" in
+   js/projects.js (the admin dashboard sets this per site).
 
    Saves JPEGs to assets/work/ and writes js/screenshots.js, which the site
    reads automatically. Projects with an explicit `image` keep that image.
@@ -38,7 +45,8 @@ const opt = (name, fallback) => {
   return i > -1 && args[i + 1] ? args[i + 1] : fallback;
 };
 
-const only = opt("only", null);
+const only = opt("only", null)?.split(",").map((s) => s.trim()).filter(Boolean) ?? null;
+const report = opt("report", null);
 const maxHeight = parseInt(opt("max-height", "4800"), 10);
 const viewportOnly = flag("viewport");
 const stitch = flag("stitch");
@@ -50,7 +58,7 @@ const slugify = (s) =>
 // Load the project list exactly as the browser would.
 const sandbox = { window: {} };
 vm.runInNewContext(await readFile(path.join(ROOT, "js/projects.js"), "utf8"), sandbox);
-const projects = (sandbox.window.PROJECTS || []).filter((p) => p.url && (!only || slugify(p.title) === only));
+const projects = (sandbox.window.PROJECTS || []).filter((p) => p.url && (!only || only.includes(slugify(p.title))));
 
 // Keep previously captured screenshots when running with --only.
 const existing = { window: {} };
@@ -117,7 +125,7 @@ async function stitchCapture(page, height) {
 }
 
 // Crop the top of a capture to the cards' 16:10 frame.
-async function writePoster(file, poster) {
+async function writePoster(context, file, poster) {
   const canvasPage = await context.newPage();
   const src = `data:image/jpeg;base64,${(await readFile(path.join(ROOT, file))).toString("base64")}`;
   const jpeg = await canvasPage.evaluate(async (src) => {
@@ -135,15 +143,23 @@ async function writePoster(file, poster) {
 
 await mkdir(path.join(ROOT, "assets/work"), { recursive: true });
 const browser = await chromium.launch();
-const context = await browser.newContext({
-  viewport: { width: 1440, height: 900 },
-  deviceScaleFactor: 1,
-  reducedMotion: reducedMotion ? "reduce" : "no-preference",
-});
+// One browser context per motion setting, since a project can ask for reduced motion itself.
+const contexts = {};
+const contextFor = async (reduce) =>
+  (contexts[reduce] ??= await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    deviceScaleFactor: 1,
+    reducedMotion: reduce ? "reduce" : "no-preference",
+  }));
+const captured = [];
+const failed = [];
 
 for (const p of projects) {
   const slug = slugify(p.title);
   const file = `assets/work/${slug}.jpg`;
+  const capture = String(p.capture || "");
+  const stitchThis = stitch || capture.includes("stitch");
+  const context = await contextFor(reducedMotion || capture.includes("reduced-motion"));
   const page = await context.newPage();
   process.stdout.write(`→ ${p.title} (${p.url}) … `);
   try {
@@ -168,7 +184,7 @@ for (const p of projects) {
       ? 900
       : Math.min(maxHeight, await page.evaluate(() => document.documentElement.scrollHeight));
 
-    if (stitch && !viewportOnly) {
+    if (stitchThis && !viewportOnly) {
       await writeFile(path.join(ROOT, file), await stitchCapture(page, height));
     } else {
       await page.screenshot({
@@ -183,11 +199,13 @@ for (const p of projects) {
       map[slug] = file;
     } else {
       const poster = `assets/work/${slug}-poster.jpg`;
-      await writePoster(file, poster);
+      await writePoster(context, file, poster);
       map[slug] = { poster, full: file };
     }
+    captured.push(slug);
     console.log(`saved ${file} (${height}px tall)`);
   } catch (err) {
+    failed.push(slug);
     console.log(`failed: ${err.message}`);
   } finally {
     await page.close();
@@ -202,3 +220,4 @@ window.SCREENSHOTS = ${JSON.stringify(map, null, 2)};
 `;
 await writeFile(path.join(ROOT, "js/screenshots.js"), out);
 console.log(`\nUpdated js/screenshots.js with ${Object.keys(map).length} screenshot(s).`);
+if (report) await writeFile(report, JSON.stringify({ captured, failed }, null, 2));
