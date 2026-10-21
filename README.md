@@ -58,7 +58,31 @@ The old preview address `/next/` now redirects to the homepage.
 
 ## Adding your projects
 
-Everything you'll usually change is in **`js/projects.js`**:
+The portfolio is managed in the **TENELEVEN admin dashboard** (repository `tenelevenmedia-admin`), on its **Portfolio** page:
+
+- **+ Add websites**: paste a list of addresses (one per line, or separated by spaces or commas). The dashboard reads each site's name, description and theme colour, suggests a category, and lets you check them before they're added.
+- Reorder, hide, rename, change the cover colour, or ask for a new screenshot of any project.
+- **Publish now** starts the sync below straight away; otherwise it runs every 30 minutes.
+
+### How it gets onto the site
+
+`.github/workflows/portfolio.yml` ("Portfolio sync") runs `scripts/sync-portfolio.mjs`, which:
+
+1. reads the published projects from the dashboard's database (`portfolio_feed()`, callable with the public key; it returns only what the site already shows),
+2. rewrites `window.PROJECTS` in `js/projects.js` (everything above it, including `window.SITE`, is left alone),
+3. takes screenshots of new projects, renamed ones and ones marked for a new screenshot (`scripts/screenshot.mjs`, with each project's own capture setting),
+4. writes `js/portfolio.json`, which the dashboard reads to show what's live,
+5. commits to `main` as "TENELEVEN portfolio", which publishes through GitHub Pages.
+
+It refuses to empty the portfolio, checks every entry (titles, addresses, no dashes in categories) before writing anything, and leaves the site untouched if the database can't be reached. A screenshot that fails is retried at the next run; until then the project shows its colour cover.
+
+**To connect it** (once): Settings → Secrets and variables → Actions → **Variables** → add `SUPABASE_URL` (`https://<ref>.supabase.co`) and `SUPABASE_PUBLISHABLE_KEY` (`sb_publishable_…`). Both are public values. Until they're set the workflow does nothing, and the list in `js/projects.js` can be edited by hand.
+
+GitHub pauses scheduled workflows in a repository with no activity for 60 days; if that happens, open Actions → Portfolio sync → Enable workflow (Publish now keeps working either way).
+
+Run it locally with `SUPABASE_URL=… SUPABASE_PUBLISHABLE_KEY=… node scripts/sync-portfolio.mjs` (add `--plan` to see what would change without writing anything).
+
+### The project list
 
 ```js
 window.SITE = {
@@ -67,14 +91,14 @@ window.SITE = {
   socials: [ { label: "Instagram", url: "https://instagram.com/..." }, ... ],
 };
 
-window.PROJECTS = [
+window.PROJECTS = [                // written by the sync
   {
-    title: "Client Name",
-    url: "https://client-site.com",
-    category: "E-commerce",
-    year: "2026",         // optional; leave out to hide years
-    image: "",            // optional — see screenshots below
-    accent: "#ff4d1f",    // colour of the generated cover / hover glow
+    "title": "Client Name",
+    "url": "https://client-site.com/",
+    "category": "Ecommerce",
+    "year": "2026",                // optional; left out to hide years
+    "accent": "#ff4d1f",           // colour of the generated cover / hover glow
+    "capture": "stitch"            // optional, see screenshots below
   },
   ...
 ];
@@ -90,7 +114,7 @@ Until a project has a screenshot, it gets a generated cover in its `accent` colo
 npm install
 npx playwright install chromium
 npm run shots                 # captures every project
-npm run shots -- --only client-name   # just one (slug = title in kebab-case)
+npm run shots -- --only client-name   # just one (slug = title in kebab-case), or several: --only a,b
 npm run shots -- --viewport           # first screen only instead of full page
 npm run shots -- --only client-name --stitch   # if a capture has blank gaps (see below)
 npm run shots -- --only client-name --reduced-motion   # if a site pins sections (see below)
@@ -102,7 +126,9 @@ Some sites, often Webflow builds, hide sections again once you scroll past them,
 
 Sites that pin sections in place while you scroll (Scent and Story is one) come out with blank gaps in a normal capture and doubled sections when stitched. `--reduced-motion` loads the site with the system "reduce motion" setting on, which on sites that support it shows every section in place with no pinning. If a site ignores that setting, the capture comes out the same as a normal one. If photos far down the page come out as blank boxes, add `--stitch` as well, so every part of the page is captured on screen (that's how Scent and Story was captured).
 
-You can also use your own image: put it in `assets/work/` and set `image: "assets/work/your-file.jpg"` on the project.
+In the dashboard, a project's **Screenshot** setting (Normal, Stitch, Reduced motion, or both) becomes its `capture` value, so the sync captures each site the way it needs.
+
+You can also use your own image: put it in `assets/work/` and set `image: "assets/work/your-file.jpg"` on the project (by hand, before the dashboard is connected).
 
 ## Running locally
 
@@ -148,8 +174,9 @@ Then in GitHub → Settings → Pages, confirm the custom domain reads `www.tene
 ```
 index.html            page markup and copy
 css/style.css         all styles
-js/projects.js        ← your projects, email, socials
+js/projects.js        ← email, socials; the project list (written by the sync)
 js/screenshots.js     auto-generated screenshot map
+js/portfolio.json     what the site shows, for the admin dashboard (written by the sync)
 js/main.js            scroll, timeline, Motion switch, chapter text
 js/scene.js           the 3D film (Three.js scene, shaders, camera keyframes)
 js/timeline.js        timing shared by the page and the 3D
@@ -158,6 +185,8 @@ vendor/gsap*.js       GSAP 3.13 + ScrollTrigger, used by version 1
 v1/index.html         version 1, encrypted (built by scripts/lock-v1.mjs)
 next/index.html       redirect from the old preview address
 scripts/screenshot.mjs  Playwright screenshot capture
+scripts/sync-portfolio.mjs  portfolio sync from the admin dashboard
+.github/workflows/portfolio.yml  runs the sync every 30 minutes and on demand
 scripts/lock-v1.mjs   builds the password protected version 1
 assets/               favicon, project screenshots
 CNAME                 custom domain for GitHub Pages

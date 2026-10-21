@@ -1,0 +1,74 @@
+# Keeps Selected work in step with the admin dashboard's Portfolio page:
+# reads the portfolio (public portfolio_feed(), the same facts the site already
+# shows), rewrites js/projects.js, takes screenshots of new sites, and commits
+# to main so GitHub Pages publishes it. See scripts/sync-portfolio.mjs.
+#
+# Runs every 30 minutes, and right away when the dashboard's "Publish now"
+# starts it (or from the Actions tab: Run workflow). It does nothing until the
+# repository variables SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY are set
+# (Settings > Secrets and variables > Actions > Variables); both are public.
+name: Portfolio sync
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+# One sync at a time; a request that comes in while one runs waits for it.
+concurrency:
+  group: portfolio-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check the dashboard's portfolio
+        id: plan
+        run: node scripts/sync-portfolio.mjs --plan --feed-out "$RUNNER_TEMP/portfolio.json"
+
+      - name: Install the screenshot browser
+        if: steps.plan.outputs.connected == 'true' && steps.plan.outputs.shots != '0'
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+
+      - name: Update the portfolio
+        if: steps.plan.outputs.connected == 'true'
+        run: node scripts/sync-portfolio.mjs --feed "$RUNNER_TEMP/portfolio.json"
+
+      - name: Publish
+        if: steps.plan.outputs.connected == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add js/projects.js js/screenshots.js js/portfolio.json assets/work
+          if git diff --cached --quiet; then
+            echo "Nothing changed."
+            exit 0
+          fi
+          git config user.name "TENELEVEN portfolio"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Portfolio: sync from the admin dashboard"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then pushed=1; break; fi
+            # main moved while this ran (a merged pull request): replay on top of it.
+            git pull --rebase origin main
+          done
+          [ "${pushed:-}" = 1 ] || { echo "Couldn't push to main."; exit 1; }
+          # Pages builds on pushes to main; ask for one too, in case this push didn't start it.
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/pages/builds" --silent || echo "Pages build request skipped (one may already be running)."

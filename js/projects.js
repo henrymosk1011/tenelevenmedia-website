@@ -1,20 +1,27 @@
 /* ==========================================================================
    TENELEVENMEDIA: site content
    --------------------------------------------------------------------------
-   This is the only file you need to edit to update the portfolio.
+   window.SITE (below) is edited here: email, time zone and socials.
+
+   window.PROJECTS, the portfolio, comes from the Portfolio page of the
+   TENELEVEN admin dashboard. The "Portfolio sync" workflow
+   (scripts/sync-portfolio.mjs) rewrites it from there every 30 minutes, or
+   right away with "Publish now", and takes the screenshots. Until the
+   dashboard is connected (see README.md, "Adding your projects") the list
+   below can still be edited by hand.
 
    Each project:
-     title    : project / client name
+     title    : project / client name (also names its screenshot files)
      url      : live website (shown as "Visit site")
      category : short label, e.g. "Ecommerce", "Musician", "Restaurant"
                 (avoid dashes; the site is written without them)
      year     : (optional) year launched; leave it out to hide years
-     image    : (optional) path to a screenshot, e.g. "assets/work/acme.jpg"
-                Run `node scripts/screenshot.mjs` to generate these
-                automatically from each project's url. Tall, full-page
-                screenshots scroll inside the browser frame on hover.
+     image    : (optional) path to your own screenshot, e.g. "assets/work/acme.jpg"
      accent   : (optional) colour used for the generated cover when there is
                 no screenshot yet, and for hover glows.
+     capture  : (optional) "stitch", "reduced-motion" or
+                "stitch-reduced-motion" for sites whose screenshots need it
+                (see README.md, "Screenshots of each site").
    ========================================================================== */
 
 window.SITE = {
