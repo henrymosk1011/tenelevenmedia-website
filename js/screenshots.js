@@ -36,5 +36,9 @@ window.SCREENSHOTS = {
   "starlight-home-health": {
     "poster": "assets/work/starlight-home-health-poster.jpg",
     "full": "assets/work/starlight-home-health.jpg"
+  },
+  "revive-drip-haus-2": {
+    "poster": "assets/work/revive-drip-haus-2-poster.jpg",
+    "full": "assets/work/revive-drip-haus-2.jpg"
   }
 };

@@ -74,7 +74,7 @@ window.PROJECTS = [
     "accent": "#ed3812"
   },
   {
-    "title": "Revive Drip Haus",
+    "title": "Revive Drip Haus 2",
     "url": "https://www.revivedriphaus.com/",
     "category": "Mobile IV Therapy",
     "accent": "#19a352"
