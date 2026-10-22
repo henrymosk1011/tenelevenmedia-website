@@ -1,0 +1,95 @@
+{
+  "synced_at": "2026-10-22T03:52:42.592Z",
+  "items": [
+    {
+      "id": "46de20d7-b173-4d0a-9237-b68855accaf6",
+      "title": "cyberxLA",
+      "url": "https://cyberx.la/",
+      "category": "Cybersecurity",
+      "year": null,
+      "accent": "#d6ff3f",
+      "shot_version": 1,
+      "shot": true
+    },
+    {
+      "id": "49b5221e-8347-4239-adc4-578413956baa",
+      "title": "Scent and Story",
+      "url": "https://scentandstory.co/",
+      "category": "Perfume Bar",
+      "year": null,
+      "accent": "#d9aeb6",
+      "shot_version": 1,
+      "shot": true
+    },
+    {
+      "id": "8f93cdcd-001d-451a-923f-67de57d858ff",
+      "title": "Starlight Hospice",
+      "url": "https://www.starlighthospice.org/",
+      "category": "Hospice Care",
+      "year": null,
+      "accent": "#feca34",
+      "shot_version": 1,
+      "shot": true
+    },
+    {
+      "id": "7d0c1b69-3ea0-461b-b8ef-5ab17317ac2f",
+      "title": "Starlight Home Health",
+      "url": "https://www.starlighthh.com/",
+      "category": "Home Health Care",
+      "year": null,
+      "accent": "#fccc27",
+      "shot_version": 1,
+      "shot": true
+    },
+    {
+      "id": "14fd1e05-2229-4db5-b3b4-0a088c989f43",
+      "title": "hlix",
+      "url": "https://hlixlabs.com/",
+      "category": "Ecommerce",
+      "year": null,
+      "accent": "#33e6b0",
+      "shot_version": 1,
+      "shot": true
+    },
+    {
+      "id": "68c4b990-e50a-4288-99de-a83a085db449",
+      "title": "SMB CPA Group",
+      "url": "https://www.smbcpagroup.com/",
+      "category": "Accounting Firm",
+      "year": null,
+      "accent": "#ed3812",
+      "shot_version": 1,
+      "shot": true
+    },
+    {
+      "id": "cc584ef5-471e-48d1-a239-e2db918e8e6e",
+      "title": "Revive Drip Haus",
+      "url": "https://www.revivedriphaus.com/",
+      "category": "Mobile IV Therapy",
+      "year": null,
+      "accent": "#19a352",
+      "shot_version": 1,
+      "shot": true
+    },
+    {
+      "id": "b7e42dbb-2d34-4622-8ad1-259c36b2fc01",
+      "title": "The HummingBird Nest",
+      "url": "https://www.thehummingbirdnest.org/",
+      "category": "Child Development",
+      "year": null,
+      "accent": "#74b996",
+      "shot_version": 1,
+      "shot": true
+    },
+    {
+      "id": "f37d21fa-0d36-4c01-abe0-24312b76cf9a",
+      "title": "The Social Club Kids",
+      "url": "https://www.thesocialclubkids.com/",
+      "category": "Kids Programs",
+      "year": null,
+      "accent": "#97c680",
+      "shot_version": 1,
+      "shot": true
+    }
+  ]
+}

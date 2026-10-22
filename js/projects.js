@@ -33,68 +33,63 @@ window.SITE = {
   socials: [],
 };
 
+// Written by scripts/sync-portfolio.mjs from the admin dashboard's Portfolio
+// page. Changes made here are replaced at the next sync: make them there.
 window.PROJECTS = [
   {
-    title: "cyberxLA", // brand spelling: lower case x, upper case LA
-    url: "https://cyberx.la/",
-    category: "Cybersecurity",
-    image: "",
-    accent: "#d6ff3f",
+    "title": "cyberxLA",
+    "url": "https://cyberx.la/",
+    "category": "Cybersecurity",
+    "accent": "#d6ff3f"
   },
   {
-    title: "Scent and Story",
-    url: "https://scentandstory.co/",
-    category: "Perfume Bar",
-    image: "",
-    accent: "#d9aeb6",
+    "title": "Scent and Story",
+    "url": "https://scentandstory.co/",
+    "category": "Perfume Bar",
+    "accent": "#d9aeb6",
+    "capture": "stitch-reduced-motion"
   },
   {
-    title: "Starlight Hospice",
-    url: "https://www.starlighthospice.org/",
-    category: "Hospice Care",
-    image: "",
-    accent: "#feca34",
+    "title": "Starlight Hospice",
+    "url": "https://www.starlighthospice.org/",
+    "category": "Hospice Care",
+    "accent": "#feca34"
   },
   {
-    title: "Starlight Home Health",
-    url: "https://www.starlighthh.com/",
-    category: "Home Health Care",
-    image: "",
-    accent: "#fccc27",
+    "title": "Starlight Home Health",
+    "url": "https://www.starlighthh.com/",
+    "category": "Home Health Care",
+    "accent": "#fccc27"
   },
   {
-    title: "hlix",
-    url: "https://hlixlabs.com/",
-    category: "Ecommerce",
-    image: "",
-    accent: "#33e6b0",
+    "title": "hlix",
+    "url": "https://hlixlabs.com/",
+    "category": "Ecommerce",
+    "accent": "#33e6b0"
   },
   {
-    title: "SMB CPA Group",
-    url: "https://www.smbcpagroup.com/",
-    category: "Accounting Firm",
-    image: "",
-    accent: "#ed3812",
+    "title": "SMB CPA Group",
+    "url": "https://www.smbcpagroup.com/",
+    "category": "Accounting Firm",
+    "accent": "#ed3812"
   },
   {
-    title: "Revive Drip Haus",
-    url: "https://www.revivedriphaus.com/",
-    category: "Mobile IV Therapy",
-    image: "",
-    accent: "#19a352",
+    "title": "Revive Drip Haus",
+    "url": "https://www.revivedriphaus.com/",
+    "category": "Mobile IV Therapy",
+    "accent": "#19a352"
   },
   {
-    title: "The HummingBird Nest",
-    url: "https://www.thehummingbirdnest.org/",
-    category: "Child Development",
-    image: "",
-    accent: "#74b996",
+    "title": "The HummingBird Nest",
+    "url": "https://www.thehummingbirdnest.org/",
+    "category": "Child Development",
+    "accent": "#74b996",
+    "capture": "stitch"
   },
   {
-    title: "The Social Club Kids",
-    url: "https://www.thesocialclubkids.com/",
-    category: "Kids Programs",
-    image: "",
-    accent: "#97c680",
-  },
+    "title": "The Social Club Kids",
+    "url": "https://www.thesocialclubkids.com/",
+    "category": "Kids Programs",
+    "accent": "#97c680"
+  }
 ];
