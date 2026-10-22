@@ -3,10 +3,10 @@
 # shows), rewrites js/projects.js, takes screenshots of new sites, and commits
 # to main so GitHub Pages publishes it. See scripts/sync-portfolio.mjs.
 #
-# Runs every 30 minutes, and right away when the dashboard's "Publish now"
-# starts it (or from the Actions tab: Run workflow). It does nothing until the
-# repository variables SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY are set
-# (Settings > Secrets and variables > Actions > Variables); both are public.
+# Runs every 30 minutes, and right away from the Actions tab (Run workflow).
+# It reads the dashboard's database with its public address and publishable key
+# (below; repository variables of the same names take precedence). Both are
+# public: the key reaches portfolio_feed() and nothing else.
 name: Portfolio sync
 
 on:
@@ -28,8 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-      SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+      SUPABASE_URL: ${{ vars.SUPABASE_URL || 'https://onpdkqzcgnoepwiqcgtv.supabase.co' }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_lKWjP561VJoxmAebZAIidA_lPYiNck3' }}
     steps:
       - uses: actions/checkout@v4
 

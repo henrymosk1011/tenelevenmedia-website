@@ -5,10 +5,9 @@
 
    window.PROJECTS, the portfolio, comes from the Portfolio page of the
    TENELEVEN admin dashboard. The "Portfolio sync" workflow
-   (scripts/sync-portfolio.mjs) rewrites it from there every 30 minutes, or
-   right away with "Publish now", and takes the screenshots. Until the
-   dashboard is connected (see README.md, "Adding your projects") the list
-   below can still be edited by hand.
+   (scripts/sync-portfolio.mjs) rewrites it from there every 30 minutes and
+   takes the screenshots, so make changes there: edits made here are replaced
+   at the next sync (see README.md, "Adding your projects").
 
    Each project:
      title    : project / client name (also names its screenshot files)

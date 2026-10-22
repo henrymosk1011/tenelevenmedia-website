@@ -58,27 +58,31 @@ The old preview address `/next/` now redirects to the homepage.
 
 ## Adding your projects
 
-The portfolio is managed in the **TENELEVEN admin dashboard** (repository `tenelevenmedia-admin`), on its **Portfolio** page:
+Selected work is managed in the **TENELEVEN admin dashboard** (repository `tenelevenmedia-admin`, at admin.tenelevenmedia.com), on its **Portfolio** page. The portfolio there is your projects tagged `portfolio`, shown as thumbnails or a list, in the order the site shows them:
 
-- **+ Add websites**: paste a list of addresses (one per line, or separated by spaces or commas). The dashboard reads each site's name, description and theme colour, suggests a category, and lets you check them before they're added.
-- Reorder, hide, rename, change the cover colour, or ask for a new screenshot of any project.
-- **Publish now** starts the sync below straight away; otherwise it runs every 30 minutes.
+- **+ Websites** (or the + tile): paste addresses (one per line, or separated by spaces or commas), give each a title and category, and they're added as launched projects at the top.
+- **Edit**: the title, address, category (no dashes), cover colour and screenshot setting, or ask for a new screenshot.
+- **Replace**: put a client's new site (or a project you already have) in an old one's place, with its title and category; the old one leaves the site.
+- **Remove**: take a site off; the project stays in the dashboard.
+- Drag ⠿ to reorder.
+
+Each site shows whether it's **on the site**, has **changes going out** at the next update, or **goes live** at the next update, read from `js/portfolio.json`.
 
 ### How it gets onto the site
 
-`.github/workflows/portfolio.yml` ("Portfolio sync") runs `scripts/sync-portfolio.mjs`, which:
+`.github/workflows/portfolio.yml` ("Portfolio sync") runs `scripts/sync-portfolio.mjs` every 30 minutes (or now: Actions → Portfolio sync → Run workflow), which:
 
-1. reads the published projects from the dashboard's database (`portfolio_feed()`, callable with the public key; it returns only what the site already shows),
+1. reads the portfolio from the dashboard's database (`portfolio_feed()`, callable with the public key; it returns only what the site already shows: id, title, address, category, colour, screenshot setting and version),
 2. rewrites `window.PROJECTS` in `js/projects.js` (everything above it, including `window.SITE`, is left alone),
-3. takes screenshots of new projects, renamed ones and ones marked for a new screenshot (`scripts/screenshot.mjs`, with each project's own capture setting),
+3. takes screenshots of new projects, renamed ones, ones whose address changed or that replaced another, and ones marked for a new screenshot (`scripts/screenshot.mjs`, with each project's own capture setting),
 4. writes `js/portfolio.json`, which the dashboard reads to show what's live,
 5. commits to `main` as "TENELEVEN portfolio", which publishes through GitHub Pages.
 
 It refuses to empty the portfolio, checks every entry (titles, addresses, no dashes in categories) before writing anything, and leaves the site untouched if the database can't be reached. A screenshot that fails is retried at the next run; until then the project shows its colour cover.
 
-**To connect it** (once): Settings → Secrets and variables → Actions → **Variables** → add `SUPABASE_URL` (`https://<ref>.supabase.co`) and `SUPABASE_PUBLISHABLE_KEY` (`sb_publishable_…`). Both are public values. Until they're set the workflow does nothing, and the list in `js/projects.js` can be edited by hand.
+The workflow has the database's public address and publishable key built in; repository variables `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` (Settings → Secrets and variables → Actions → Variables) take precedence if you ever move it. Changes made to `js/projects.js` by hand are replaced at the next sync: make them in the dashboard.
 
-GitHub pauses scheduled workflows in a repository with no activity for 60 days; if that happens, open Actions → Portfolio sync → Enable workflow (Publish now keeps working either way).
+GitHub pauses scheduled workflows in a repository with no activity for 60 days; if that happens, open Actions → Portfolio sync → Enable workflow.
 
 Run it locally with `SUPABASE_URL=… SUPABASE_PUBLISHABLE_KEY=… node scripts/sync-portfolio.mjs` (add `--plan` to see what would change without writing anything).
 
@@ -126,9 +130,9 @@ Some sites, often Webflow builds, hide sections again once you scroll past them,
 
 Sites that pin sections in place while you scroll (Scent and Story is one) come out with blank gaps in a normal capture and doubled sections when stitched. `--reduced-motion` loads the site with the system "reduce motion" setting on, which on sites that support it shows every section in place with no pinning. If a site ignores that setting, the capture comes out the same as a normal one. If photos far down the page come out as blank boxes, add `--stitch` as well, so every part of the page is captured on screen (that's how Scent and Story was captured).
 
-In the dashboard, a project's **Screenshot** setting (Normal, Stitch, Reduced motion, or both) becomes its `capture` value, so the sync captures each site the way it needs.
+In the dashboard, a site's **Screenshot** setting (Normal, Stitched, Reduced motion, or both) becomes its `capture` value, so the sync captures each site the way it needs.
 
-You can also use your own image: put it in `assets/work/` and set `image: "assets/work/your-file.jpg"` on the project (by hand, before the dashboard is connected).
+To use your own image instead, save it over the project's files in `assets/work/` (`<slug>.jpg` and `<slug>-poster.jpg`, as Starlight Hospice's are); the sync keeps them until the project asks for a new screenshot or its address changes.
 
 ## Running locally
 
