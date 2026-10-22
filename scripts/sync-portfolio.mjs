@@ -179,8 +179,18 @@ if (!items.length) {
 const shots = (await loadWindow("js/screenshots.js")).SCREENSHOTS || {};
 const previous = await readJson("js/portfolio.json", { items: [] });
 const prevById = new Map((previous.items || []).map((x) => [x.id, x]));
-/** The screenshot version the site has: from the last sync, or (before the first one) whatever's already there. */
-const hasVersion = (p) => (shots[p.slug] ? prevById.get(p.id)?.shot_version ?? p.shot_version : 0);
+/**
+ * The screenshot version the site has: from the last sync, or (before the first one)
+ * whatever's already there. A project the last sync didn't have, or whose address
+ * changed, gets a new screenshot even when one by its title exists: that's a client's
+ * new site taking the old one's place.
+ */
+function hasVersion(p) {
+  if (!shots[p.slug]) return 0;
+  const prev = prevById.get(p.id);
+  if (prev) return prev.url === p.url ? prev.shot_version : 0;
+  return previous.items?.length ? 0 : p.shot_version;
+}
 const needShot = items.filter((p) => hasVersion(p) < p.shot_version);
 const nextJs = await projectsJs(items);
 const jsChanged = nextJs !== (await readFile(path.join(ROOT, "js/projects.js"), "utf8"));
