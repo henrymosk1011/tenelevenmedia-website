@@ -1,5 +1,5 @@
 {
-  "synced_at": "2026-10-22T04:30:14.031Z",
+  "synced_at": "2026-10-22T09:37:46.283Z",
   "items": [
     {
       "id": "46de20d7-b173-4d0a-9237-b68855accaf6",
@@ -48,6 +48,16 @@
       "category": "Ecommerce",
       "year": null,
       "accent": "#33e6b0",
+      "shot_version": 1,
+      "shot": true
+    },
+    {
+      "id": "6f3fba33-54eb-48af-901f-5e81a19a83c2",
+      "title": "Illuminatehomehealth",
+      "url": "https://illuminatehomehealth.com/",
+      "category": "Home Health Care",
+      "year": null,
+      "accent": "#ff4d1f",
       "shot_version": 1,
       "shot": true
     },

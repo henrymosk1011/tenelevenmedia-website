@@ -40,5 +40,9 @@ window.SCREENSHOTS = {
   "revive-drip-haus-2": {
     "poster": "assets/work/revive-drip-haus-2-poster.jpg",
     "full": "assets/work/revive-drip-haus-2.jpg"
+  },
+  "illuminatehomehealth": {
+    "poster": "assets/work/illuminatehomehealth-poster.jpg",
+    "full": "assets/work/illuminatehomehealth.jpg"
   }
 };

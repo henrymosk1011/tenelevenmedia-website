@@ -68,6 +68,12 @@ window.PROJECTS = [
     "accent": "#33e6b0"
   },
   {
+    "title": "Illuminatehomehealth",
+    "url": "https://illuminatehomehealth.com/",
+    "category": "Home Health Care",
+    "accent": "#ff4d1f"
+  },
+  {
     "title": "SMB CPA Group",
     "url": "https://www.smbcpagroup.com/",
     "category": "Accounting Firm",
