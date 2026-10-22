@@ -31,7 +31,11 @@ jobs:
       SUPABASE_URL: ${{ vars.SUPABASE_URL || 'https://onpdkqzcgnoepwiqcgtv.supabase.co' }}
       SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_lKWjP561VJoxmAebZAIidA_lPYiNck3' }}
     steps:
+      # Always the latest site, so a re-run of an old run (or one that waited in the
+      # queue) syncs on top of what's live rather than on the commit it started from.
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-node@v4
         with:
@@ -66,8 +70,10 @@ jobs:
           git commit -m "Portfolio: sync from the admin dashboard"
           for attempt in 1 2 3; do
             if git push origin HEAD:main; then pushed=1; break; fi
-            # main moved while this ran (a merged pull request): replay on top of it.
-            git pull --rebase origin main
+            # main moved while this ran (a merged pull request, another sync): replay on
+            # top of it. The files this run wrote are rebuilt from the dashboard every
+            # time, so where both changed them, this run's (the newer) version wins.
+            git pull --rebase -X theirs origin main
           done
           [ "${pushed:-}" = 1 ] || { echo "Couldn't push to main."; exit 1; }
           # Pages builds on pushes to main; ask for one too, in case this push didn't start it.
