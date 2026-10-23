@@ -1,6 +1,26 @@
 {
-  "synced_at": "2026-10-22T09:37:46.283Z",
+  "synced_at": "2026-10-23T21:38:41.000Z",
   "items": [
+    {
+      "id": "962cb861-97fb-4d23-a20c-1364b2d36bf5",
+      "title": "Hyeteam",
+      "url": "https://hyeteam.com/",
+      "category": "",
+      "year": null,
+      "accent": "#ff4d1f",
+      "shot_version": 1,
+      "shot": true
+    },
+    {
+      "id": "075f977d-0888-46b2-8f82-3fccb04d34cd",
+      "title": "Halftimecuts",
+      "url": "https://halftimecuts.com/",
+      "category": "",
+      "year": null,
+      "accent": "#ff4d1f",
+      "shot_version": 1,
+      "shot": true
+    },
     {
       "id": "46de20d7-b173-4d0a-9237-b68855accaf6",
       "title": "cyberxLA",

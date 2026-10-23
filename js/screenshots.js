@@ -44,5 +44,13 @@ window.SCREENSHOTS = {
   "illuminatehomehealth": {
     "poster": "assets/work/illuminatehomehealth-poster.jpg",
     "full": "assets/work/illuminatehomehealth.jpg"
+  },
+  "hyeteam": {
+    "poster": "assets/work/hyeteam-poster.jpg",
+    "full": "assets/work/hyeteam.jpg"
+  },
+  "halftimecuts": {
+    "poster": "assets/work/halftimecuts-poster.jpg",
+    "full": "assets/work/halftimecuts.jpg"
   }
 };

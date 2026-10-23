@@ -37,6 +37,18 @@ window.SITE = {
 // page. Changes made here are replaced at the next sync: make them there.
 window.PROJECTS = [
   {
+    "title": "Hyeteam",
+    "url": "https://hyeteam.com/",
+    "category": "",
+    "accent": "#ff4d1f"
+  },
+  {
+    "title": "Halftimecuts",
+    "url": "https://halftimecuts.com/",
+    "category": "",
+    "accent": "#ff4d1f"
+  },
+  {
     "title": "cyberxLA",
     "url": "https://cyberx.la/",
     "category": "Cybersecurity",
