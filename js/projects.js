@@ -37,22 +37,16 @@ window.SITE = {
 // page. Changes made here are replaced at the next sync: make them there.
 window.PROJECTS = [
   {
-    "title": "Hyeteam",
-    "url": "https://hyeteam.com/",
-    "category": "",
-    "accent": "#ff4d1f"
+    "title": "cyberxLA",
+    "url": "https://cyberx.la/",
+    "category": "Cybersecurity",
+    "accent": "#d6ff3f"
   },
   {
     "title": "Halftimecuts",
     "url": "https://halftimecuts.com/",
     "category": "",
     "accent": "#ff4d1f"
-  },
-  {
-    "title": "cyberxLA",
-    "url": "https://cyberx.la/",
-    "category": "Cybersecurity",
-    "accent": "#d6ff3f"
   },
   {
     "title": "Scent and Story",
@@ -78,6 +72,12 @@ window.PROJECTS = [
     "url": "https://hlixlabs.com/",
     "category": "Ecommerce",
     "accent": "#33e6b0"
+  },
+  {
+    "title": "Hyeteam",
+    "url": "https://hyeteam.com/",
+    "category": "",
+    "accent": "#ff4d1f"
   },
   {
     "title": "Illuminatehomehealth",
