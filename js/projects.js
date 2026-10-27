@@ -43,7 +43,7 @@ window.PROJECTS = [
     "accent": "#d6ff3f"
   },
   {
-    "title": "Halftimecuts",
+    "title": "Halftime Cuts",
     "url": "https://halftimecuts.com/",
     "category": "",
     "accent": "#ff4d1f"
@@ -80,7 +80,7 @@ window.PROJECTS = [
     "accent": "#ff4d1f"
   },
   {
-    "title": "Illuminatehomehealth",
+    "title": "Illuminate Home Health",
     "url": "https://illuminatehomehealth.com/",
     "category": "Home Health Care",
     "accent": "#ff4d1f"
@@ -92,7 +92,7 @@ window.PROJECTS = [
     "accent": "#ed3812"
   },
   {
-    "title": "Revive Drip Haus 2",
+    "title": "Revive Drip Haus",
     "url": "https://www.revivedriphaus.com/",
     "category": "Mobile IV Therapy",
     "accent": "#19a352"
