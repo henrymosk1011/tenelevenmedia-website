@@ -45,7 +45,7 @@ window.PROJECTS = [
   {
     "title": "Halftime Cuts",
     "url": "https://halftimecuts.com/",
-    "category": "",
+    "category": "Barbershop",
     "accent": "#ff4d1f"
   },
   {
