@@ -301,7 +301,8 @@ main { position: relative; z-index: 2; }
 .proj {
   position: absolute;
   top: 50%; left: var(--gutter);
-  width: min(36vw, 520px);
+  /* grows with the title (5.4vw up to 6rem), so long words like HummingBird fit */
+  width: min(36vw, 40rem);
   transform: translate3d(0, -50%, 0);
   pointer-events: none;
 }
