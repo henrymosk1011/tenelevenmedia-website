@@ -836,14 +836,14 @@ export function createScene({ canvas, projects, tier = "high" }) {
   scene.add(points);
 
   /* ---------- project screens ---------- */
-  const SW = 2.88, SH = 1.8;
+  const SW = 2.88, SH = 1.8, CURVE = 0.05;
   const screenGeo = new THREE.PlaneGeometry(SW, SH, 36, 22);
   const screens = projects.map((p, i) => {
     const cover = coverTexture(p, i, projects.length);
     const mat = new THREE.ShaderMaterial({
       vertexShader: SCREEN_VERT, fragmentShader: SCREEN_FRAG, transparent: true,
       uniforms: {
-        uTex: u(cover), uOpacity: u(0), uVel: u(0), uHover: u(0), uCurve: u(0.05),
+        uTex: u(cover), uOpacity: u(0), uVel: u(0), uHover: u(0), uCurve: u(CURVE),
         uWin: u(1), uScroll: u(0), uFlipV: u(0), uSize: u(new THREE.Vector2(SW, SH)),
         uAccent: u(v3(rgb(p.accent || "#ff4d1f"))), uTime: u(0),
       },
@@ -915,6 +915,10 @@ export function createScene({ canvas, projects, tier = "high" }) {
   let L = null;
   let tracks = null;
   const n = projects.length;
+  // how far down the "Selected work" heading reaches, as a share of the screen
+  // height from the top (the page measures it and passes it to setWorkClear)
+  let workClear = 0;
+  const probe = new THREE.PerspectiveCamera(), corner = new THREE.Vector3(), upY = new THREE.Vector3(0, 1, 0);
 
   function build(aspect) {
     const portrait = aspect < 0.82;
@@ -955,15 +959,38 @@ export function createScene({ canvas, projects, tier = "high" }) {
 
     // work: arrive at each screen, linger, move on
     const W0 = WORK_Z, GAP = WORK_GAP;
+    // On wide, short windows the "Selected work" heading reaches lower than the
+    // top of the screens on its side (the left). There the camera rises through
+    // the corridor, so the screens sit lower in the frame, just enough to leave
+    // a small gap under the heading. Elsewhere lift stays 0.
+    let lift = 0;
+    if (!portrait && workClear > 0) {
+      probe.fov = fov; probe.aspect = aspect; probe.updateProjectionMatrix();
+      let top = 1; // the highest top edge of a left hand screen, as a share of the height
+      for (let i = 1; i < n; i += 2) {
+        const sy = (i % 3 - 1) * 0.12, sz = W0 - i * GAP;
+        probe.position.set(0.18, sy * 0.4, sz + screenDist - 0.45); // the closest the camera comes
+        probe.lookAt(-0.55, sy * 0.5, sz - 4);
+        probe.updateMatrixWorld();
+        for (const x of [-SW / 2, SW / 2]) {
+          corner.set(x, SH / 2, -CURVE * x * x).applyAxisAngle(upY, 0.3);
+          corner.x -= sx; corner.y += sy; corner.z += sz;
+          top = Math.min(top, (1 - corner.project(probe).y) / 2);
+        }
+      }
+      const drop = Math.min(0.1, Math.max(0, workClear + 0.025 - top));
+      lift = drop * 2 * (screenDist - 0.45) * tanH;
+    }
+    L.workLift = lift;
     L.screens = [];
     for (let i = 0; i < n; i++) {
       const side = i % 2 === 0 ? 1 : -1;
       const sxi = side * sx, syi = portrait ? 0.32 : (i % 3 - 1) * 0.12, szi = W0 - i * GAP;
       L.screens.push({ x: sxi, y: syi, z: szi, rotY: portrait ? 0 : -side * 0.3 });
       const tc = 3 + workTime(i, n), hw = workHalf(n);
-      const cx = portrait ? 0 : -side * 0.18, cy = portrait ? 0 : syi * 0.4;
+      const cx = portrait ? 0 : -side * 0.18, cy = portrait ? 0 : syi * 0.4 + lift;
       const tx = portrait ? 0 : side * 0.55;
-      const ty = portrait ? 0 : syi * 0.5;
+      const ty = portrait ? 0 : syi * 0.5 + lift;
       key(tc - hw * 0.5, [cx, cy, szi + screenDist + 0.55], [tx, ty, szi - 4]);
       key(tc + hw * 0.5, [cx, cy, szi + screenDist - 0.45], [tx, ty, szi - 4]);
     }
@@ -1191,6 +1218,11 @@ export function createScene({ canvas, projects, tier = "high" }) {
     return hovered;
   }
   function setPointer(nx, ny) { pointer.tx = nx; pointer.ty = ny; }
+  function setWorkClear(f) {
+    if (Math.abs(f - workClear) < 0.002) return;
+    workClear = f;
+    if (tracks) build(camera.aspect);
+  }
   // where a point of the stage lands on screen (for labels that sit on 3D things)
   function projectStage(dx = 0, dy = 0, dz = 0) {
     tmp.set(STAGE.x + dx, STAGE.y + dy, STAGE.z + dz).project(camera);
@@ -1202,7 +1234,7 @@ export function createScene({ canvas, projects, tier = "high" }) {
   renderer.compile(scene, camera);
 
   return {
-    update, resize, setDpr, pick, setPointer, projectStage,
+    update, resize, setDpr, pick, setPointer, setWorkClear, projectStage,
     get dpr() { return dpr; }, maxDpr,
     get layout() { return L; },
   };

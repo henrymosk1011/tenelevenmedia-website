@@ -234,6 +234,9 @@ async function startFilm() {
     tops = chapters.map((el) => el.getBoundingClientRect().top + y);
     maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
     lens = tops.map((t, k) => Math.max(1, (k < tops.length - 1 ? tops[k + 1] : maxScroll) - t));
+    // where the "Selected work" heading ends, so the 3D screens can stay clear of it
+    const head = $(".work__title"), panel = head?.closest(".ch__sticky");
+    if (panel) scene.setWorkClear((head.getBoundingClientRect().bottom - panel.getBoundingClientRect().top) / panel.clientHeight);
     drawTicks();
   }
   const sceneTime = (y) => {
