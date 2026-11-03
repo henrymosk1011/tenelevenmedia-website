@@ -40,7 +40,12 @@ export const PAL = {
   deep: rgb("#1a1440"),
 };
 
-export const STAGE = new THREE.Vector3(0, 0, -152);
+// the work corridor: depth of the first project screen, and the gap between screens
+const WORK_Z = -68, WORK_GAP = 7.5;
+// the stage where Services, Process and Contact play. It sits 24 past the last
+// project screen (and never nearer than z -152), so however many projects the
+// portfolio holds, the corridor never reaches into Services.
+const stageFor = (n) => new THREE.Vector3(0, 0, Math.min(-152, WORK_Z - Math.max(0, n - 1) * WORK_GAP - 24));
 const TAU = Math.PI * 2;
 
 
@@ -422,7 +427,7 @@ function rng(seed) {
   };
 }
 
-function buildFormations(N) {
+function buildFormations(N, S) {
   const R = rng(1011);
   const gauss = () => {
     let u = 0, v = 0;
@@ -430,7 +435,6 @@ function buildFormations(N) {
     while (!v) v = R();
     return Math.sqrt(-2 * Math.log(u)) * Math.cos(TAU * v);
   };
-  const S = STAGE;
   const make = (fn) => {
     const a = new Float32Array(N * 4);
     const o = [0, 0, 0, 0];
@@ -517,7 +521,7 @@ function buildFormations(N) {
   // 3 dust: a big volume around the work corridor, clear of the camera path
   F.push(make((i, o) => {
     let x = (R() * 2 - 1) * 11, y = (R() * 2 - 1) * 6.5;
-    const z = -60 - R() * 84;
+    const z = -60 + R() * (S.z + 68); // from just before the corridor to just short of the stage
     const r = Math.hypot(x / 1.6, y / 1.1);
     if (r < 1.6) { const k = 1.6 / Math.max(r, 0.05); x *= k; y *= k; }
     o[0] = x; o[1] = y; o[2] = z;
@@ -690,6 +694,7 @@ function coverTexture(p, i, n) {
    ========================================================================== */
 export function createScene({ canvas, projects, tier = "high" }) {
   const high = tier === "high";
+  const STAGE = stageFor(projects.length);
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: high, alpha: false, powerPreference: "high-performance" });
   renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
   renderer.setClearColor(new THREE.Color(...PAL.ink), 1);
@@ -720,7 +725,7 @@ export function createScene({ canvas, projects, tier = "high" }) {
     const R = rng(77), pos = new Float32Array(starCount * 3), seed = new Float32Array(starCount);
     for (let i = 0; i < starCount; i++) {
       const a = R() * TAU, r = 8 + Math.pow(R(), 0.7) * 60;
-      pos[i * 3] = Math.cos(a) * r; pos[i * 3 + 1] = Math.sin(a) * r * 0.7; pos[i * 3 + 2] = 30 - R() * 250;
+      pos[i * 3] = Math.cos(a) * r; pos[i * 3 + 1] = Math.sin(a) * r * 0.7; pos[i * 3 + 2] = 30 - R() * (98 - STAGE.z); // to 68 past the stage
       seed[i] = R();
     }
     starGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
@@ -800,7 +805,7 @@ export function createScene({ canvas, projects, tier = "high" }) {
 
   /* ---------- particles ---------- */
   const N = high ? 42000 : 18000;
-  const formations = buildFormations(N).map((a) => new THREE.BufferAttribute(a, 4));
+  const formations = buildFormations(N, STAGE).map((a) => new THREE.BufferAttribute(a, 4));
   const pGeo = new THREE.BufferGeometry();
   pGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(N * 3), 3));
   {
@@ -949,7 +954,7 @@ export function createScene({ canvas, projects, tier = "high" }) {
     key(2.86, [0, -0.65, -40], [0, portrait ? -3.2 : -1.6, -58]);
 
     // work: arrive at each screen, linger, move on
-    const W0 = -68, GAP = 7.5;
+    const W0 = WORK_Z, GAP = WORK_GAP;
     L.screens = [];
     for (let i = 0; i < n; i++) {
       const side = i % 2 === 0 ? 1 : -1;
@@ -1152,10 +1157,12 @@ export function createScene({ canvas, projects, tier = "high" }) {
     // screens
     const workOn = T > 2.55 && T < 4.2;
     const camZ = camPos.z;
+    // every screen is gone once the camera has left the corridor for Services
+    const leave = 1 - smooth(3.975, 4.03, T);
     for (const m of screens) {
       const ud = m.userData;
       const dz = camZ - m.position.z;
-      const o = workOn ? smooth(17, 7, dz) * smooth(0.8, 3.2, dz) : 0;
+      const o = workOn ? smooth(17, 7, dz) * smooth(0.8, 3.2, dz) * leave : 0;
       m.visible = o > 0.003;
       ud.hover += ((hovered === ud.index ? 1 : 0) - ud.hover) * Math.min(1, dt * 8);
       const uni = m.material.uniforms;

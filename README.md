@@ -20,7 +20,7 @@ There's a timeline along the bottom like a video player: drag or click it to jum
 
 - **Scrolling** is the browser's own (no smooth-scroll library). Text is tied straight to the scrollbar; the 3D catches up over about a tenth of a second so it moves fluidly.
 - **Phones and slower machines** get fewer particles and a lower resolution automatically, and the resolution drops further if frames start running slow.
-- **Tuning:** `DURATION` (Play length) and `FOLLOW` (how quickly the 3D catches up with the scrollbar) are at the top of `js/main.js`. The camera path, colours and timing for each chapter are keyframes in `build()` in `js/scene.js`.
+- **Tuning:** `DURATION` (Play length) and `FOLLOW` (how quickly the 3D catches up with the scrollbar) are at the top of `js/main.js`. The camera path, colours and timing for each chapter are keyframes in `build()` in `js/scene.js`. The project screens are spaced evenly down a corridor, and the stage where Services, Process and Contact play sits a fixed distance past the last one (`stageFor()` at the top of `js/scene.js`), so adding projects makes the corridor longer without any screen ending up in Services.
 
 ### Accessibility (WCAG 2.2 AA)
 
