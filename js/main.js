@@ -18,6 +18,13 @@ const DURATION = 71;
 // How quickly the 3D catches up with the scroll position. Higher is snappier;
 // the text is always tied straight to the scrollbar.
 const FOLLOW = 10;
+// Touch screens: a flick glides on to the next moment of the film (a chapter,
+// a project, a service, a step) and stops there, instead of the browser's
+// momentum flinging past several chapters. The glide takes GLIDE_BASE seconds
+// plus GLIDE_PER_SCREEN for every screen height it travels, up to GLIDE_MAX.
+const GLIDE_BASE = 0.45;
+const GLIDE_PER_SCREEN = 0.5;
+const GLIDE_MAX = 2;
 
 /* ---------- helpers ---------- */
 const slugify = (s) =>
@@ -238,6 +245,7 @@ async function startFilm() {
     const head = $(".work__title"), panel = head?.closest(".ch__sticky");
     if (panel) scene.setWorkClear((head.getBoundingClientRect().bottom - panel.getBoundingClientRect().top) / panel.clientHeight);
     drawTicks();
+    moments = momentTimes().map(yForTime);
   }
   const sceneTime = (y) => {
     let k = 0;
@@ -283,7 +291,8 @@ async function startFilm() {
   const navLinks = $$(".nav__links a");
 
   /* ---------- scrolling for you: Play, chapter jumps, the timeline ---------- */
-  let auto = null; // { kind: "play" } or { kind: "jump", from, to, t, dur }
+  let auto = null; // { kind: "play" }, { kind: "jump", from, to, t, dur } or { kind: "glide", ... }
+  let autoY = null; // where the last frame of scrolling for you left the page
   let playY = 0;
   const playButtons = $$("[data-play]");
   const setPlaying = (on) => {
@@ -301,6 +310,7 @@ async function startFilm() {
     if (window.scrollY >= maxScroll - 2) window.scrollTo(0, 0);
     playY = window.scrollY;
     auto = { kind: "play" };
+    autoY = null;
     setPlaying(true);
   }
   function stop() {
@@ -312,12 +322,14 @@ async function startFilm() {
     const from = window.scrollY, to = clamp(y, 0, maxScroll);
     const dist = Math.abs(to - from) / maxScroll;
     auto = { kind: "jump", from, to, t: 0, dur: clamp(0.8 + dist * 2.6, 0.8, 3.2) };
+    autoY = null;
     setPlaying(false);
   }
   // any input from the reader hands control back to them
   const interrupt = () => { if (auto) stop(); };
   window.addEventListener("wheel", interrupt, { passive: true });
-  window.addEventListener("touchstart", interrupt, { passive: true });
+  // (but not a touch on Play itself, or Pause would stop the film and then restart it)
+  window.addEventListener("touchstart", (e) => { if (!e.target.closest?.("[data-play]")) interrupt(); }, { passive: true });
   window.addEventListener("keydown", (e) => {
     if (["ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End", " "].includes(e.key) && e.target === document.body) interrupt();
   });
@@ -352,6 +364,92 @@ async function startFilm() {
     if (b) jumpTo(projectY(+b.dataset.project));
   });
 
+  /* ---------- touch: a flick glides to the next moment, never past it ----------
+     On a phone one quick flick carries the browser's momentum across several
+     chapters, so people who flick (most of them) skipped the film. In the film
+     a one finger drag still moves the page with the finger, but letting go
+     with a flick glides on to the next moment and stops there, at a pace the
+     3D can show. A slow release just coasts a little, never past a moment.
+     Pinch zoom and form controls are left to the browser, and a pull down at
+     the very top is too, so pull to refresh still works. */
+  const STUDIO_LIT = 0.74; // the studio sentence is fully lit (see .about__text --wp)
+  let moments = []; // scroll positions a flick stops at, measured with the chapters
+  function momentTimes() {
+    return [
+      0,
+      1 + STUDIO_LIT,
+      2 + LAND.rhythm,
+      ...(n ? projects.map((_, i) => 3 + workTime(i, n)) : [3.5]),
+      ...[0, 1, 2, 3].map((s) => 4 + (s + 0.5) / 4), // each service
+      ...[0, 1, 2, 3].map((s) => FILL_FROM + FILL_LEN * (s + 0.5) / 4), // each process step
+      7, // the end: Contact
+    ];
+  }
+  // the first moment in direction dir that is more than `gap` past `from` and
+  // no more than `back` behind y (so a drag that just overshot settles onto it)
+  const nextMoment = (from, y, dir, gap, back = 0) => {
+    if (dir > 0) return moments.find((m) => m > from + gap && m >= y - back) ?? maxScroll;
+    for (let i = moments.length - 1; i >= 0; i--) if (moments[i] < from - gap && moments[i] <= y + back) return moments[i];
+    return 0;
+  };
+  // glide from where the page is to `to`, leaving at the finger's speed v
+  // (px per ms) and easing to a stop; m caps how fast it may leave
+  function glide(to, v, dur, m = 3) {
+    const from = window.scrollY, dist = to - from;
+    if (Math.abs(dist) < 1) return;
+    auto = { kind: "glide", from, to, t: 0, dur, m0: clamp((v * 1000 * dur) / dist, 0, m) };
+    autoY = null;
+    setPlaying(false);
+  }
+  const FLICK = 0.3; // px per ms: letting go faster than this is a flick
+  let touch = null;
+  window.addEventListener("touchstart", (e) => {
+    touch = null;
+    if (!running || e.touches.length !== 1 || e.target.closest?.("input, select, textarea")) return;
+    const y = e.touches[0].clientY;
+    // samples use the event's own time, so a slow frame can't make a flick look like a pause
+    touch = { y0: y, s0: window.scrollY, mode: "", moved: false, pts: [[e.timeStamp, y]] };
+  }, { passive: true });
+  window.addEventListener("touchmove", (e) => {
+    if (!touch) return;
+    if (!running || e.touches.length !== 1) { touch = null; return; } // a second finger: pinch zoom
+    const y = e.touches[0].clientY, dy = y - touch.y0;
+    if (!touch.mode) touch.mode = touch.s0 <= 0 && dy > 0 ? "native" : "film";
+    if (touch.mode !== "film") return;
+    if (!e.cancelable) { touch = null; return; } // the browser is already scrolling: let it
+    e.preventDefault();
+    if (Math.abs(dy) > 8) touch.moved = true;
+    window.scrollTo(0, clamp(touch.s0 - dy, 0, maxScroll));
+    const now = e.timeStamp;
+    touch.pts.push([now, y]);
+    while (touch.pts.length > 2 && now - touch.pts[0][0] > 100) touch.pts.shift();
+  }, { passive: false });
+  window.addEventListener("touchend", (e) => {
+    const g = touch;
+    touch = null;
+    if (!g || g.mode !== "film" || !running) return;
+    if (g.moved && e.cancelable) e.preventDefault(); // a drag, not a tap: no click
+    // the finger's speed over its last 100ms, in page pixels per ms (+ is down the page)
+    const a = g.pts[0], b = g.pts[g.pts.length - 1];
+    const v = b[0] > a[0] && e.timeStamp - b[0] < 80 ? (a[1] - b[1]) / (b[0] - a[0]) : 0;
+    const y = window.scrollY, dir = Math.sign(v);
+    if (!dir) return;
+    if (Math.abs(v) < FLICK) {
+      // a slow release coasts a little, but never past the next moment
+      const cap = nextMoment(y, y, dir, 0), coast = y + v * 200;
+      glide(dir > 0 ? Math.min(coast, cap) : Math.max(coast, cap), v, 0.6);
+      return;
+    }
+    // a flick moves on one moment from where the finger started (like a
+    // carousel): moments close together can't be skipped by the drag itself
+    const gap = window.innerHeight * 0.12;
+    const from = dir > 0 ? Math.min(g.s0, y) : Math.max(g.s0, y);
+    const to = nextMoment(from, y, dir, gap, gap);
+    const dur = Math.min(GLIDE_MAX, GLIDE_BASE + (GLIDE_PER_SCREEN * Math.abs(to - y)) / window.innerHeight);
+    glide(to, v, dur, 1.6);
+  }, { passive: false });
+  window.addEventListener("touchcancel", () => (touch = null));
+
   // keyboard: when focus lands on something that is faded out (another
   // chapter, another project), bring its chapter on screen
   const shown = (el) => {
@@ -379,7 +477,8 @@ async function startFilm() {
   const finePointer = window.matchMedia("(pointer: fine)").matches;
   let px = -1, py = -1, overScreen = -1;
   window.addEventListener("pointermove", (e) => {
-    if (!running) return;
+    // a finger dragging the film shouldn't also swing the camera
+    if (!running || e.pointerType === "touch") return;
     px = e.clientX; py = e.clientY;
     scene.setPointer((px / window.innerWidth) * 2 - 1, -((py / window.innerHeight) * 2 - 1));
     if (finePointer) { label.style.setProperty("--x", `${px}px`); label.style.setProperty("--y", `${py}px`); }
@@ -397,6 +496,7 @@ async function startFilm() {
   const dialLabel = $(".dial-label");
   const dialNum = $("[data-dial-num]"), dialPct = $("[data-dial-pct]");
   const state = { proj: -2, service: -2, step: -2, chapter: -1, pct: -1 };
+  const FILL_FROM = 5.06, FILL_LEN = 0.84; // the scene times over which the process dial fills
   const setActive = (list, i) => list.forEach((el, k) => el.classList.toggle("is-active", k === i));
 
   function updateUI(T) {
@@ -421,7 +521,7 @@ async function startFilm() {
       setActive(dots, service);
     }
     // process
-    const fill = clamp((T - 5 - 0.06) / 0.84, 0, 1);
+    const fill = clamp((T - FILL_FROM) / FILL_LEN, 0, 1);
     const step = T > 5 && T < 6 ? Math.min(3, Math.floor(fill * 4)) : -1;
     if (step !== state.step) {
       state.step = step;
@@ -455,6 +555,9 @@ async function startFilm() {
     last = now;
     time += dt;
 
+    // something else moved the page mid way (a screen reader, a tap on the
+    // phone's status bar): hand control back instead of pulling it back
+    if (auto && autoY != null && Math.abs(window.scrollY - autoY) > 2) stop();
     if (auto?.kind === "play") {
       playY += (maxScroll / DURATION) * dt;
       window.scrollTo(0, playY);
@@ -464,9 +567,16 @@ async function startFilm() {
       const e = auto.t < 0.5 ? 4 * auto.t ** 3 : 1 - (-2 * auto.t + 2) ** 3 / 2;
       window.scrollTo(0, auto.from + (auto.to - auto.from) * e);
       if (auto.t >= 1) auto = null;
+    } else if (auto?.kind === "glide") {
+      // leaves at m0 times the average speed (the finger's, capped) and eases to a stop
+      const t = (auto.t = Math.min(1, auto.t + dt / auto.dur));
+      const e = auto.m0 * t * (1 - t) * (1 - t) + t * t * (3 - 2 * t);
+      window.scrollTo(0, auto.from + (auto.to - auto.from) * e);
+      if (t >= 1) auto = null;
     }
 
     const y = window.scrollY;
+    autoY = auto ? y : null;
     const T = sceneTime(y);
 
     // text: progress through each chapter, straight from the scrollbar
