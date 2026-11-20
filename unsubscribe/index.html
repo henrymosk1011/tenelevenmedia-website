@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- The Unsubscribe link at the bottom of TENELEVENMEDIA's outreach emails opens this page
+       (unsubscribe/?t=<code>). Its button sends the code to the unsubscribe function in the
+       admin dashboard's Supabase project, which stops emailing that lead for good. The code
+       stays on this page: no fonts or other files from elsewhere, and no referrer. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self'; connect-src https://onpdkqzcgnoepwiqcgtv.supabase.co; base-uri 'none'; form-action 'none'" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="robots" content="noindex" />
+  <title>Unsubscribe | TENELEVENMEDIA</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml" />
+  <style>
+    :root { --ink: #0c0c0d; --ink-2: #141416; --bone: #f1ede6; --bone-dim: rgba(241, 237, 230, 0.74); --accent: #ff4d1f; --accent-text: #ff9a78; --line: rgba(241, 237, 230, 0.16); }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; background: var(--ink); color: var(--bone); font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    header { padding: 24px clamp(16px, 4vw, 48px); }
+    .mark { color: var(--bone); font-weight: 800; letter-spacing: -0.02em; text-decoration: none; font-size: 20px; }
+    .mark span { color: var(--accent); }
+    main { flex: 1; display: grid; place-items: center; padding: 24px 16px 64px; }
+    .card { width: 100%; max-width: 520px; background: var(--ink-2); border: 1px solid var(--line); border-radius: 20px; padding: clamp(24px, 5vw, 40px); }
+    h1 { font-size: clamp(26px, 6vw, 34px); line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 12px; }
+    p { margin: 0 0 16px; color: var(--bone-dim); }
+    button { appearance: none; border: 0; border-radius: 999px; background: var(--accent); color: var(--ink); font: inherit; font-weight: 700; padding: 14px 26px; min-height: 48px; cursor: pointer; margin-top: 8px; }
+    button:hover { filter: brightness(1.08); }
+    button:disabled { opacity: 0.7; cursor: progress; }
+    button:focus-visible, a:focus-visible { outline: 3px solid var(--accent-text); outline-offset: 3px; }
+    .status { min-height: 1.55em; margin: 16px 0 0; color: var(--bone); }
+    .status.bad { color: var(--accent-text); }
+    /* Kept on the page (a screen reader reads what it says), but takes no room while empty. */
+    .status:empty { min-height: 0; margin: 0; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header><a class="mark" href="../">TENELEVEN<span>.</span></a></header>
+  <main>
+    <div class="card">
+      <h1 id="title" tabindex="-1">Unsubscribe from our emails?</h1>
+      <p id="lead">You'll be taken off the list right away, and we won't email you again.</p>
+      <noscript><p>This page needs JavaScript. You can also reply "unsubscribe" to any of our emails and we'll take you off.</p></noscript>
+      <button id="go" type="button" hidden>Unsubscribe</button>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </div>
+  </main>
+  <script src="unsubscribe.js"></script>
+</body>
+</html>
