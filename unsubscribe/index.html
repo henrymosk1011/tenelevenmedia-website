@@ -46,6 +46,7 @@
       <p id="status" class="status" role="status" aria-live="polite"></p>
     </div>
   </main>
-  <script src="unsubscribe.js"></script>
+  <!-- The version makes browsers fetch the script again after it changes, not reuse a saved copy. -->
+  <script src="unsubscribe.js?v=2"></script>
 </body>
 </html>
