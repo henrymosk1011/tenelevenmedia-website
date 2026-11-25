@@ -1,5 +1,5 @@
 {
-  "synced_at": "2026-10-29T05:31:32.483Z",
+  "synced_at": "2026-11-25T04:49:52.908Z",
   "items": [
     {
       "id": "46de20d7-b173-4d0a-9237-b68855accaf6",
@@ -53,9 +53,9 @@
     },
     {
       "id": "14fd1e05-2229-4db5-b3b4-0a088c989f43",
-      "title": "hlix",
+      "title": "hlix labs",
       "url": "https://hlixlabs.com/",
-      "category": "Ecommerce",
+      "category": "eCommerce",
       "year": null,
       "accent": "#33e6b0",
       "shot_version": 1,
@@ -63,9 +63,9 @@
     },
     {
       "id": "962cb861-97fb-4d23-a20c-1364b2d36bf5",
-      "title": "Hyeteam",
+      "title": "HyeTeam",
       "url": "https://hyeteam.com/",
-      "category": "",
+      "category": "Recruitment",
       "year": null,
       "accent": "#ff4d1f",
       "shot_version": 1,

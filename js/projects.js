@@ -68,15 +68,15 @@ window.PROJECTS = [
     "accent": "#fccc27"
   },
   {
-    "title": "hlix",
+    "title": "hlix labs",
     "url": "https://hlixlabs.com/",
-    "category": "Ecommerce",
+    "category": "eCommerce",
     "accent": "#33e6b0"
   },
   {
-    "title": "Hyeteam",
+    "title": "HyeTeam",
     "url": "https://hyeteam.com/",
-    "category": "",
+    "category": "Recruitment",
     "accent": "#ff4d1f"
   },
   {

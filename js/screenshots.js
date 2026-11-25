@@ -60,5 +60,9 @@ window.SCREENSHOTS = {
   "illuminate-home-health": {
     "poster": "assets/work/illuminate-home-health-poster.jpg",
     "full": "assets/work/illuminate-home-health.jpg"
+  },
+  "hlix-labs": {
+    "poster": "assets/work/hlix-labs-poster.jpg",
+    "full": "assets/work/hlix-labs.jpg"
   }
 };
