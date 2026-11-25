@@ -49,7 +49,7 @@ window.PROJECTS = [
     "accent": "#ff4d1f"
   },
   {
-    "title": "Scent and Story",
+    "title": "Scent & Story",
     "url": "https://scentandstory.co/",
     "category": "Perfume Bar",
     "accent": "#d9aeb6",

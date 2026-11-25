@@ -64,5 +64,9 @@ window.SCREENSHOTS = {
   "hlix-labs": {
     "poster": "assets/work/hlix-labs-poster.jpg",
     "full": "assets/work/hlix-labs.jpg"
+  },
+  "scent-story": {
+    "poster": "assets/work/scent-story-poster.jpg",
+    "full": "assets/work/scent-story.jpg"
   }
 };
