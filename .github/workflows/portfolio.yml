@@ -48,7 +48,7 @@ jobs:
       - name: Install the screenshot browser
         if: steps.plan.outputs.connected == 'true' && steps.plan.outputs.shots != '0'
         run: |
-          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          npm install --no-save --no-audit --no-fund playwright@1.64.1
           npx playwright install --with-deps chromium
 
       - name: Update the portfolio
